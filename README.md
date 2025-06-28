@@ -1,141 +1,137 @@
-# Telegram Mini Apps Next.js Template
+# Telegram Mini App Boilerplate
 
-This template demonstrates how developers can implement a web application on the
-Telegram Mini Apps platform using the following technologies and libraries:
+A modern, production-ready boilerplate for building Telegram Mini Apps with Next.js, featuring a complete tech stack for rapid development.
 
-- [Next.js](https://nextjs.org/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [TON Connect](https://docs.ton.org/develop/dapps/ton-connect/overview)
-- [@telegram-apps SDK](https://docs.telegram-mini-apps.com/packages/telegram-apps-sdk/2-x)
-- [Telegram UI](https://github.com/Telegram-Mini-Apps/TelegramUI)
+## 🚀 Tech Stack
 
-> The template was created using [pnpm](https://pnpm.io/). Therefore, it is
-> required to use it for this project as well. Using other package managers, you
-> will receive a corresponding error.
+- **Framework**: [Next.js 15](https://nextjs.org/) - React framework for production
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) - Beautifully designed components
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand) - Lightweight state management
+- **Database**: [Supabase](https://supabase.com/) - Open source Firebase alternative
+- **Telegram Integration**: [@telegram-apps/sdk-react](https://docs.telegram-mini-apps.com/) - Official Telegram SDK
+- **TON Blockchain**: [TON Connect](https://docs.ton.org/develop/dapps/ton-connect/overview) - TON wallet integration
+- **TypeScript**: Full type safety throughout the application
 
-## Install Dependencies
+## 📦 Features
 
-If you have just cloned this template, you should install the project
-dependencies using the command:
+- ✅ Telegram Mini App SDK integration
+- ✅ TON Connect wallet integration
+- ✅ Supabase authentication and database
+- ✅ Modern UI components with shadcn/ui
+- ✅ Responsive design with Tailwind CSS
+- ✅ Type-safe development with TypeScript
+- ✅ State management with Zustand
+- ✅ Error boundaries and error handling
+- ✅ Development tools (Eruda for mobile debugging)
 
-```Bash
+## 🛠️ Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm, yarn, or pnpm
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <your-repo-url>
+cd tma-boilerplate
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
 pnpm install
 ```
 
-## Scripts
-
-This project contains the following scripts:
-
-- `dev`. Runs the application in development mode.
-- `dev:https`. Runs the application in development mode using self-signed SSL
-  certificate.
-- `build`. Builds the application for production.
-- `start`. Starts the Next.js server in production mode.
-- `lint`. Runs [eslint](https://eslint.org/) to ensure the code quality meets
-  the required
-  standards.
-
-To run a script, use the `pnpm run` command:
-
-```Bash
-pnpm run {script}
-# Example: pnpm run build
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
 ```
 
-## Create Bot and Mini App
+4. Configure your environment variables in `.env.local`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-Before you start, make sure you have already created a Telegram Bot. Here is
-a [comprehensive guide](https://docs.telegram-mini-apps.com/platform/creating-new-app)
-on how to do it.
+### Development
 
-## Run
-
-Although Mini Apps are designed to be opened
-within [Telegram applications](https://docs.telegram-mini-apps.com/platform/about#supported-applications),
-you can still develop and test them outside of Telegram during the development
-process.
-
-To run the application in the development mode, use the `dev` script:
+Run the development server:
 
 ```bash
-pnpm run dev
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
 ```
 
-After this, you will see a similar message in your terminal:
+For HTTPS development (required for Telegram Mini Apps):
 
 ```bash
-▲ Next.js 14.2.3
-- Local:        http://localhost:3000
-
-✓ Starting...
-✓ Ready in 2.9s
+npm run dev:https
+# or
+yarn dev:https
+# or
+pnpm dev:https
 ```
 
-To view the application, you need to open the `Local`
-link (`http://localhost:3000` in this example) in your browser.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-It is important to note that some libraries in this template, such as
-`@telegram-apps/sdk`, are not intended for use outside of Telegram.
+## 🏗️ Project Structure
 
-Nevertheless, they appear to function properly. This is because the
-`src/hooks/useTelegramMock.ts` file, which is imported in the application's
-`Root` component, employs the `mockTelegramEnv` function to simulate the
-Telegram environment. This trick convinces the application that it is
-running in a Telegram-based environment. Therefore, be cautious not to use this
-function in production mode unless you fully understand its implications.
+```
+src/
+├── app/              # Next.js app router
+├── components/       # Reusable UI components
+│   ├── ui/          # shadcn/ui components
+│   └── ...          # Custom components
+├── config/          # Configuration files
+├── core/            # Core application logic
+├── css/             # CSS utilities
+├── hooks/           # Custom React hooks
+└── lib/             # Utility libraries
+    └── supabase/    # Supabase client configuration
+```
 
-### Run Inside Telegram
+## 🚀 Deployment
 
-Although it is possible to run the application outside of Telegram, it is
-recommended to develop it within Telegram for the most accurate representation
-of its real-world functionality.
-
-To run the application inside Telegram, [@BotFather](https://t.me/botfather)
-requires an HTTPS link.
-
-This template already provides a solution.
-
-To retrieve a link with the HTTPS protocol, consider using the `dev:https`
-script:
+### Build for production:
 
 ```bash
-$ pnpm run dev:https
-
-▲ Next.js 14.2.3
-- Local:        https://localhost:3000
-
-✓ Starting...
-✓ Ready in 2.4s
+npm run build
+npm run start
 ```
 
-Visiting the `Local` link (`https://localhost:3000` in this example) in your
-browser, you will see the following warning:
+### Deploy to Vercel:
 
-![SSL Warning](assets/ssl-warning.png)
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new).
 
-This browser warning is normal and can be safely ignored as long as the site is
-secure. Click the `Proceed to localhost (unsafe)` button to continue and view
-the application.
+## 📱 Telegram Mini App Setup
 
-Once the application is displayed correctly, submit the
-link `https://127.0.0.1:3000` (`https://localhost:3000` is considered as invalid
-by BotFather) as the Mini App link to [@BotFather](https://t.me/botfather).
-Then, navigate to [https://web.telegram.org/k/](https://web.telegram.org/k/),
-find your bot, and launch the Telegram Mini App. This approach provides the full
-development experience.
+1. Create a new bot with [@BotFather](https://t.me/botfather)
+2. Set up your Mini App URL in BotFather
+3. Configure your domain for Telegram Mini Apps
+4. Test your app in Telegram
 
-## Deploy
+## 🔧 Available Scripts
 
-The easiest way to deploy your Next.js app is to use
-the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
-from the creators of Next.js.
+- `npm run dev` - Start development server
+- `npm run dev:https` - Start development server with HTTPS
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
-Check out
-the [Next.js deployment documentation](https://nextjs.org/docs/deployment) for
-more details.
+## 📄 License
 
-## Useful Links
+This project is open source and available under the [MIT License](LICENSE).
 
-- [Platform documentation](https://docs.telegram-mini-apps.com/)
-- [@telegram-apps/sdk-react documentation](https://docs.telegram-mini-apps.com/packages/telegram-apps-sdk-react)
-- [Telegram developers community chat](https://t.me/devs)
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
