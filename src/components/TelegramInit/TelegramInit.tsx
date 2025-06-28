@@ -8,7 +8,7 @@ import {
   viewport,
   backButton,
   mainButton,
-  initData,
+  init,
 } from '@telegram-apps/sdk-react';
 
 export function TelegramInit({ children }: PropsWithChildren) {
@@ -19,65 +19,64 @@ export function TelegramInit({ children }: PropsWithChildren) {
 
     const initTelegram = async () => {
       try {
-        // Проверяем, что мы в Telegram окружении
+        // Проверяем, что мы в браузере
         if (typeof window === 'undefined') return;
         
         // Получаем параметры запуска
         const lp = retrieveLaunchParams();
+        console.log('Launch params:', lp);
         
         // Инициализируем SDK только если мы внутри Telegram
         if (lp && lp.tgWebAppVersion) {
-          // Инициализируем основные компоненты с проверками
-          if (!miniApp.isMounted()) {
-            miniApp.mount();
+          console.log('Initializing Telegram SDK...');
+          
+          // Сначала инициализируем SDK
+          init();
+          
+          // Монтируем компоненты с проверками доступности
+          if (miniApp.mountSync.isAvailable()) {
+            miniApp.mountSync();
+            console.log('MiniApp mounted');
           }
           
-          if (!themeParams.isMounted()) {
-            themeParams.mount();
+          if (themeParams.mountSync.isAvailable()) {
+            themeParams.mountSync();
+            console.log('ThemeParams mounted');
           }
           
-          if (!viewport.isMounted()) {
+          if (viewport.mount.isAvailable()) {
             viewport.mount();
+            console.log('Viewport mounted');
           }
           
-          if (!backButton.isMounted()) {
-            try {
-              backButton.mount();
-            } catch (err) {
-              console.warn('Failed to mount backButton:', err);
-            }
+          if (backButton.mount.isAvailable()) {
+            backButton.mount();
+            console.log('BackButton mounted');
           }
           
-          if (!mainButton.isMounted()) {
-            try {
-              mainButton.mount();
-            } catch (err) {
-              console.warn('Failed to mount mainButton:', err);
-            }
+          if (mainButton.mount.isAvailable()) {
+            mainButton.mount();
+            console.log('MainButton mounted');
           }
-          
 
-          // Настройка базовых параметров
-          try {
+          // Настройка базовых параметров с проверками доступности
+          if (miniApp.ready.isAvailable()) {
             miniApp.ready();
-          } catch (err) {
-            console.warn('Failed to ready miniApp:', err);
+            console.log('MiniApp ready');
           }
           
-          try {
+          if (viewport.expand.isAvailable()) {
             viewport.expand();
-          } catch (err) {
-            console.warn('Failed to expand viewport:', err);
+            console.log('Viewport expanded');
           }
           
           // Скрываем back button по умолчанию
-          if (backButton.isMounted()) {
-            try {
-              backButton.hide();
-            } catch (err) {
-              console.warn('Failed to hide backButton:', err);
-            }
+          if (backButton.hide.isAvailable()) {
+            backButton.hide();
+            console.log('BackButton hidden');
           }
+        } else {
+          console.log('Not in Telegram environment, skipping SDK initialization');
         }
         
         if (mounted) {
