@@ -10,6 +10,7 @@ import { AppRoot } from '@telegram-apps/telegram-ui';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorPage } from '@/components/ErrorPage';
+import { TelegramInit } from '@/components/TelegramInit/TelegramInit';
 import { useDidMount } from '@/hooks/useDidMount';
 
 import './styles.css';
@@ -38,7 +39,9 @@ export function Root(props: PropsWithChildren) {
 
   return didMount ? (
     <ErrorBoundary fallback={ErrorPage}>
-      <RootInner {...props} />
+      <TelegramInit>
+        <RootInner {...props} />
+      </TelegramInit>
     </ErrorBoundary>
   ) : (
     <div className="root__loading">Loading</div>
