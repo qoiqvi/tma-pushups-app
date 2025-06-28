@@ -14,12 +14,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json()
-    const { workout_id, original_url } = body
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const workoutId = formData.get('workoutId') as string
     
-    if (!workout_id || !original_url) {
+    if (!file || !workoutId) {
       return NextResponse.json(
-        { error: 'workout_id and original_url are required' },
+        { error: 'File and workoutId are required' },
+        { status: 400 }
+      )
+    }
+
+    // Проверяем тип файла
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json(
+        { error: 'File must be an image' },
+        { status: 400 }
+      )
+    }
+
+    // Проверяем размер файла (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: 'File size must be less than 10MB' },
         { status: 400 }
       )
     }
@@ -28,7 +45,7 @@ export async function POST(request: NextRequest) {
     const { data: workout, error: workoutError } = await supabaseAdmin
       .from('workouts')
       .select('id')
-      .eq('id', workout_id)
+      .eq('id', workoutId)
       .eq('user_id', userId)
       .single()
     
@@ -39,32 +56,79 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Создаем запись о фото
-    const { data, error } = await supabaseAdmin
+    // Генерируем уникальное имя файла
+    const fileExtension = file.name.split('.').pop() || 'jpg'
+    const fileName = `${userId}/${workoutId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`
+    
+    // Конвертируем File в ArrayBuffer для Supabase
+    const arrayBuffer = await file.arrayBuffer()
+    const fileData = new Uint8Array(arrayBuffer)
+
+    // Загружаем в Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('workout-photos')
+      .upload(fileName, fileData, {
+        contentType: file.type,
+        upsert: false
+      })
+    
+    if (uploadError) {
+      return NextResponse.json(
+        { error: `Upload failed: ${uploadError.message}` },
+        { status: 500 }
+      )
+    }
+
+    // Получаем публичный URL
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('workout-photos')
+      .getPublicUrl(fileName)
+
+    // Создаем запись о фото в БД
+    const { data: photo, error: dbError } = await supabaseAdmin
       .from('workout_photos')
       .insert({
-        workout_id,
-        original_url,
+        workout_id: workoutId,
+        original_url: publicUrl,
         processing_status: 'pending'
       })
       .select()
       .single()
     
-    if (error) {
+    if (dbError) {
+      // Удаляем загруженный файл в случае ошибки БД
+      await supabaseAdmin.storage
+        .from('workout-photos')
+        .remove([fileName])
+      
       return NextResponse.json(
-        { error: error.message },
+        { error: dbError.message },
         { status: 500 }
       )
     }
 
-    // TODO: Здесь можно добавить логику загрузки в облачное хранилище
-    // и постановку задачи на обработку фото
+    // Запускаем обработку в фоне
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                     (request.headers.get('host') ? 
+                      `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}` : 
+                      'http://localhost:3000')
+      
+      fetch(`${baseUrl}/api/photos/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_id: photo.id })
+      }).catch(err => console.error('Background processing failed:', err))
+    } catch (err) {
+      console.error('Failed to start background processing:', err)
+    }
     
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json(photo, { status: 201 })
   } catch (err) {
+    console.error('Upload error:', err)
     return NextResponse.json(
-      { error: 'Invalid JSON' },
-      { status: 400 }
+      { error: 'Upload failed' },
+      { status: 500 }
     )
   }
 }

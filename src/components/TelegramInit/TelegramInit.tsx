@@ -40,30 +40,43 @@ export function TelegramInit({ children }: PropsWithChildren) {
             viewport.mount();
           }
           
-          if (!backButton.isMounted() && backButton.isSupported()) {
-            backButton.mount();
+          if (!backButton.isMounted()) {
+            try {
+              backButton.mount();
+            } catch (err) {
+              console.warn('Failed to mount backButton:', err);
+            }
           }
           
-          if (!mainButton.isMounted() && mainButton.isSupported()) {
-            mainButton.mount();
+          if (!mainButton.isMounted()) {
+            try {
+              mainButton.mount();
+            } catch (err) {
+              console.warn('Failed to mount mainButton:', err);
+            }
           }
           
-          if (!initData.isMounted()) {
-            initData.mount();
-          }
 
           // Настройка базовых параметров
-          if (miniApp.isSupported()) {
+          try {
             miniApp.ready();
+          } catch (err) {
+            console.warn('Failed to ready miniApp:', err);
           }
           
-          if (viewport.isSupported()) {
+          try {
             viewport.expand();
+          } catch (err) {
+            console.warn('Failed to expand viewport:', err);
           }
           
           // Скрываем back button по умолчанию
-          if (backButton.isSupported() && backButton.isMounted()) {
-            backButton.hide();
+          if (backButton.isMounted()) {
+            try {
+              backButton.hide();
+            } catch (err) {
+              console.warn('Failed to hide backButton:', err);
+            }
           }
         }
         

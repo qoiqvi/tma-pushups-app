@@ -5,8 +5,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 // PUT /api/sets/[id] - Обновить подход
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   const userId = getUserIdFromRequest(request)
   
   if (!userId) {
@@ -84,8 +85,9 @@ export async function PUT(
 // DELETE /api/sets/[id] - Удалить подход
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   const userId = getUserIdFromRequest(request)
   
   if (!userId) {

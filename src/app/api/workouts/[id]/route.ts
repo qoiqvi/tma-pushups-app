@@ -5,8 +5,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 // GET /api/workouts/[id] - Получить конкретную тренировку
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   const userId = getUserIdFromRequest(request)
   
   if (!userId) {
@@ -42,8 +43,9 @@ export async function GET(
 // PUT /api/workouts/[id] - Обновить тренировку
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   const userId = getUserIdFromRequest(request)
   
   if (!userId) {
@@ -106,8 +108,9 @@ export async function PUT(
 // DELETE /api/workouts/[id] - Удалить тренировку
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   const userId = getUserIdFromRequest(request)
   
   if (!userId) {

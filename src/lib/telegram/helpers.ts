@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { TelegramUser } from './auth'
+import { TelegramUser } from './validation'
 
 export function getUserFromRequest(request: NextRequest): TelegramUser | null {
   const userDataHeader = request.headers.get('X-User-Data')

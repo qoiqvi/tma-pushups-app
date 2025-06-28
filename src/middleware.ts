@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { validateTelegramWebAppData } from '@/lib/telegram/auth'
+import { parseInitData, validateInitDataFormat } from '@/lib/telegram/validation'
 
 export function middleware(request: NextRequest) {
   // Пропускаем статику и API routes для аутентификации
@@ -19,11 +19,19 @@ export function middleware(request: NextRequest) {
     )
   }
   
-  const user = validateTelegramWebAppData(initData)
+  // Проверяем формат данных
+  if (!validateInitDataFormat(initData)) {
+    return NextResponse.json(
+      { error: 'Invalid init data format' },
+      { status: 401 }
+    )
+  }
+  
+  const user = parseInitData(initData)
   
   if (!user) {
     return NextResponse.json(
-      { error: 'Invalid init data' },
+      { error: 'Invalid user data' },
       { status: 401 }
     )
   }

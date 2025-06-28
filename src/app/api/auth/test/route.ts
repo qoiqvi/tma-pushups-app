@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateTelegramWebAppData } from '@/lib/telegram'
+import { parseInitData, validateInitDataFormat } from '@/lib/telegram'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +13,18 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const user = validateTelegramWebAppData(initData)
+    if (!validateInitDataFormat(initData)) {
+      return NextResponse.json(
+        { error: 'Invalid init data format' },
+        { status: 401 }
+      )
+    }
+    
+    const user = parseInitData(initData)
     
     if (!user) {
       return NextResponse.json(
-        { error: 'Invalid init data' },
+        { error: 'Invalid user data' },
         { status: 401 }
       )
     }
