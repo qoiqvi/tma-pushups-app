@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '@/lib/telegram'
 import { supabaseAdmin } from '@/lib/supabase'
+import { updateUserStats } from '@/lib/stats'
 
 // GET /api/workouts/[id] - Получить конкретную тренировку
 export async function GET(
@@ -96,6 +97,16 @@ export async function PUT(
       )
     }
     
+    // Если тренировка была завершена (finished_at), обновляем статистику
+    if (finished_at) {
+      try {
+        await updateUserStats(userId)
+      } catch (statsError) {
+        console.error('Failed to update user stats:', statsError)
+        // Не возвращаем ошибку, так как главная операция успешна
+      }
+    }
+    
     return NextResponse.json(data)
   } catch (err) {
     return NextResponse.json(
@@ -131,6 +142,14 @@ export async function DELETE(
       { error: error.message },
       { status: 500 }
     )
+  }
+  
+  // Обновляем статистику после удаления тренировки
+  try {
+    await updateUserStats(userId)
+  } catch (statsError) {
+    console.error('Failed to update user stats after deletion:', statsError)
+    // Не возвращаем ошибку, так как главная операция успешна
   }
   
   return NextResponse.json({ success: true })

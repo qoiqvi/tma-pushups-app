@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '@/lib/telegram'
 import { supabaseAdmin } from '@/lib/supabase'
+import { startOfWeek, endOfWeek, subDays, format, parseISO, differenceInDays } from 'date-fns'
 
 // GET /api/stats - Получить статистику пользователя
 export async function GET(request: NextRequest) {
@@ -13,88 +14,154 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  const { searchParams } = new URL(request.url)
+  const period = searchParams.get('period') || 'week' // week, month, all
+  
   try {
-    // Получаем или создаем запись статистики
-    let { data: stats, error } = await supabaseAdmin
+    // Определяем фильтр по дате
+    let dateFilter: { gte?: string; lte?: string } = {}
+    const now = new Date()
+    
+    switch (period) {
+      case 'week':
+        dateFilter = {
+          gte: startOfWeek(now, { weekStartsOn: 1 }).toISOString(),
+          lte: endOfWeek(now, { weekStartsOn: 1 }).toISOString()
+        }
+        break
+      case 'month':
+        dateFilter = {
+          gte: subDays(now, 30).toISOString(),
+          lte: now.toISOString()
+        }
+        break
+      case 'all':
+        // Без фильтра по дате
+        break
+    }
+    
+    // Получаем тренировки за период
+    let workoutsQuery = supabaseAdmin
+      .from('workouts')
+      .select('id, started_at, finished_at, total_reps, total_sets, duration_seconds')
+      .eq('user_id', userId)
+      .not('finished_at', 'is', null) // Только завершенные тренировки
+      .order('started_at', { ascending: true })
+    
+    if (dateFilter.gte) {
+      workoutsQuery = workoutsQuery.gte('started_at', dateFilter.gte)
+    }
+    if (dateFilter.lte) {
+      workoutsQuery = workoutsQuery.lte('started_at', dateFilter.lte)
+    }
+    
+    const { data: workouts, error: workoutsError } = await workoutsQuery
+    
+    if (workoutsError) {
+      return NextResponse.json(
+        { error: workoutsError.message },
+        { status: 500 }
+      )
+    }
+    
+    // Получаем или вычисляем общую статистику пользователя
+    const { data: userStats, error: statsError } = await supabaseAdmin
       .from('user_stats')
       .select('*')
       .eq('user_id', userId)
       .single()
-
-    if (error && error.code === 'PGRST116') {
-      // Если статистики нет, создаем пустую запись
-      const { data: newStats, error: createError } = await supabaseAdmin
-        .from('user_stats')
-        .insert({
+    
+    // Если статистики нет, создаем новую запись
+    let stats = userStats
+    if (statsError || !userStats) {
+      // Получаем все тренировки для вычисления общей статистики
+      const { data: allWorkouts } = await supabaseAdmin
+        .from('workouts')
+        .select('*')
+        .eq('user_id', userId)
+        .not('finished_at', 'is', null)
+        .order('started_at', { ascending: true })
+      
+      if (allWorkouts && allWorkouts.length > 0) {
+        // Вычисляем streak
+        const { currentStreak, maxStreak } = calculateStreaks(allWorkouts)
+        
+        // Вычисляем остальную статистику
+        const totalWorkouts = allWorkouts.length
+        const totalReps = allWorkouts.reduce((sum, w) => sum + w.total_reps, 0)
+        const avgRepsPerWorkout = totalReps / totalWorkouts
+        const personalBestReps = Math.max(...allWorkouts.map(w => w.total_reps))
+        const personalBestWorkout = allWorkouts.find(w => w.total_reps === personalBestReps)
+        const lastWorkoutDate = allWorkouts[allWorkouts.length - 1].started_at.split('T')[0]
+        
+        // Создаем запись в user_stats
+        const newStats = {
+          user_id: userId,
+          total_workouts: totalWorkouts,
+          total_reps: totalReps,
+          current_streak: currentStreak,
+          max_streak: maxStreak,
+          last_workout_date: lastWorkoutDate,
+          avg_reps_per_workout: Math.round(avgRepsPerWorkout * 10) / 10,
+          personal_best_reps: personalBestReps,
+          personal_best_date: personalBestWorkout?.started_at.split('T')[0] || null,
+          updated_at: new Date().toISOString(),
+        }
+        
+        const { data: createdStats } = await supabaseAdmin
+          .from('user_stats')
+          .upsert(newStats)
+          .select()
+          .single()
+        
+        stats = createdStats || newStats
+      } else {
+        // Если тренировок нет, создаем пустую статистику
+        stats = {
           user_id: userId,
           total_workouts: 0,
           total_reps: 0,
           current_streak: 0,
           max_streak: 0,
           avg_reps_per_workout: 0,
-          personal_best_reps: 0
-        })
-        .select()
-        .single()
-
-      if (createError) {
-        return NextResponse.json(
-          { error: createError.message },
-          { status: 500 }
-        )
+          personal_best_reps: 0,
+          personal_best_date: null,
+          last_workout_date: null,
+          updated_at: new Date().toISOString(),
+        }
       }
-      stats = newStats
-    } else if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      )
     }
-
-    // Получаем актуальную статистику из тренировок
-    const { data: workouts } = await supabaseAdmin
-      .from('workouts')
-      .select('total_reps, started_at, finished_at')
-      .eq('user_id', userId)
-      .not('finished_at', 'is', null)
-      .order('started_at', { ascending: false })
-
-    if (workouts && workouts.length > 0) {
-      const totalWorkouts = workouts.length
-      const totalReps = workouts.reduce((sum, w) => sum + (w.total_reps || 0), 0)
-      const avgRepsPerWorkout = totalReps / totalWorkouts
-      const personalBestReps = Math.max(...workouts.map(w => w.total_reps || 0))
-
-      // Вычисляем streak
-      const { currentStreak, maxStreak } = calculateStreaks(workouts)
-
-      // Обновляем статистику в БД
-      const updatedStats = {
-        total_workouts: totalWorkouts,
-        total_reps: totalReps,
-        current_streak: currentStreak,
-        max_streak: Math.max(maxStreak, stats?.max_streak || 0),
-        avg_reps_per_workout: avgRepsPerWorkout,
-        personal_best_reps: Math.max(personalBestReps, stats?.personal_best_reps || 0),
-        personal_best_date: personalBestReps > (stats?.personal_best_reps || 0) 
-          ? workouts.find(w => w.total_reps === personalBestReps)?.started_at?.split('T')[0]
-          : stats?.personal_best_date,
-        last_workout_date: workouts[0]?.started_at?.split('T')[0]
-      }
-
-      await supabaseAdmin
-        .from('user_stats')
-        .update(updatedStats)
-        .eq('user_id', userId)
-
-      return NextResponse.json({
-        ...stats,
-        ...updatedStats
-      })
+    
+    // Подготавливаем данные для графика
+    const chartData = workouts?.map(w => ({
+      date: format(parseISO(w.started_at), 'yyyy-MM-dd'),
+      dateFormatted: format(parseISO(w.started_at), 'dd.MM'),
+      reps: w.total_reps,
+      sets: w.total_sets,
+      duration: w.duration_seconds ? Math.round(w.duration_seconds / 60) : 0
+    })) || []
+    
+    // Вычисляем статистику за период
+    const periodStats = {
+      workouts_count: workouts?.length || 0,
+      total_reps: workouts?.reduce((sum, w) => sum + w.total_reps, 0) || 0,
+      total_sets: workouts?.reduce((sum, w) => sum + w.total_sets, 0) || 0,
+      total_duration: workouts?.reduce((sum, w) => sum + (w.duration_seconds || 0), 0) || 0,
+      avg_reps: workouts?.length ? Math.round((workouts.reduce((sum, w) => sum + w.total_reps, 0) / workouts.length) * 10) / 10 : 0
     }
-
-    return NextResponse.json(stats)
-  } catch (err) {
+    
+    return NextResponse.json({
+      // Общая статистика пользователя
+      overall_stats: stats,
+      // Статистика за выбранный период
+      period_stats: periodStats,
+      // Данные для графиков
+      chart_data: chartData,
+      period
+    })
+    
+  } catch (error) {
+    console.error('Stats API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -102,61 +169,67 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Функция для вычисления streak
-function calculateStreaks(workouts: any[]): { currentStreak: number, maxStreak: number } {
-  if (!workouts.length) return { currentStreak: 0, maxStreak: 0 }
-
+// Функция для вычисления серий (streaks)
+function calculateStreaks(workouts: any[]): { currentStreak: number; maxStreak: number } {
+  if (!workouts || workouts.length === 0) {
+    return { currentStreak: 0, maxStreak: 0 }
+  }
+  
   // Группируем тренировки по дням
-  const workoutDays = workouts
-    .map(w => w.started_at.split('T')[0])
-    .filter((date, index, arr) => arr.indexOf(date) === index) // уникальные дни
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()) // сортируем по убыванию
-
+  const workoutDays = new Set(
+    workouts.map(w => w.started_at.split('T')[0])
+  )
+  
+  const sortedDays = Array.from(workoutDays).sort()
+  
   let currentStreak = 0
   let maxStreak = 0
-  let tempStreak = 0
-
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-
-  const todayStr = today.toISOString().split('T')[0]
-  const yesterdayStr = yesterday.toISOString().split('T')[0]
-
-  // Проверяем текущий streak
-  let expectedDate = workoutDays[0] === todayStr ? today : yesterday
+  let tempStreak = 1
   
-  for (const workoutDay of workoutDays) {
-    const expectedDateStr = expectedDate.toISOString().split('T')[0]
+  // Проверяем, есть ли тренировка сегодня или вчера
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
+  
+  const hasRecentWorkout = workoutDays.has(today) || workoutDays.has(yesterday)
+  
+  if (sortedDays.length === 1) {
+    const streak = hasRecentWorkout ? 1 : 0
+    return { currentStreak: streak, maxStreak: 1 }
+  }
+  
+  // Вычисляем максимальную серию
+  for (let i = 1; i < sortedDays.length; i++) {
+    const prevDay = parseISO(sortedDays[i - 1])
+    const currentDay = parseISO(sortedDays[i])
+    const daysDiff = differenceInDays(currentDay, prevDay)
     
-    if (workoutDay === expectedDateStr) {
-      currentStreak++
+    if (daysDiff === 1) {
       tempStreak++
-      maxStreak = Math.max(maxStreak, tempStreak)
-      
-      expectedDate.setDate(expectedDate.getDate() - 1)
     } else {
-      // Если пропуск более чем на день, сбрасываем текущий streak
-      const daysDiff = Math.floor(
-        (new Date(expectedDateStr).getTime() - new Date(workoutDay).getTime()) / 
-        (1000 * 60 * 60 * 24)
-      )
-      
-      if (daysDiff > 1) {
-        if (currentStreak === tempStreak) {
-          currentStreak = 0
-        }
-        tempStreak = 1
-        expectedDate = new Date(workoutDay)
-        expectedDate.setDate(expectedDate.getDate() - 1)
-      }
+      maxStreak = Math.max(maxStreak, tempStreak)
+      tempStreak = 1
     }
   }
-
-  // Если последняя тренировка была не вчера и не сегодня, текущий streak = 0
-  if (workoutDays[0] !== todayStr && workoutDays[0] !== yesterdayStr) {
-    currentStreak = 0
+  maxStreak = Math.max(maxStreak, tempStreak)
+  
+  // Вычисляем текущую серию (только если есть недавняя тренировка)
+  if (hasRecentWorkout) {
+    let streak = 1
+    const lastDay = sortedDays[sortedDays.length - 1]
+    
+    for (let i = sortedDays.length - 2; i >= 0; i--) {
+      const currentDay = parseISO(sortedDays[i + 1])
+      const prevDay = parseISO(sortedDays[i])
+      const daysDiff = differenceInDays(currentDay, prevDay)
+      
+      if (daysDiff === 1) {
+        streak++
+      } else {
+        break
+      }
+    }
+    currentStreak = streak
   }
-
+  
   return { currentStreak, maxStreak }
 }
