@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "src/app/api/bot/webhook/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/bot/setup/route.ts": {
+      "maxDuration": 10
+    },
+    "src/app/api/bot/reminders/route.ts": {
+      "maxDuration": 10
+    }
+  }
+}
