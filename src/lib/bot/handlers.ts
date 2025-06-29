@@ -53,9 +53,9 @@ function upsertUser(user: BotUser) {
         console.error('Error upserting user:', error)
       }
     })
-    .catch((error: any) => {
-      console.error('Error in upsertUser:', error)
-    })
+    // .catch((error: any) => {
+    //   console.error('Error in upsertUser:', error)
+    // })
 }
 
 // Обработчик команд
