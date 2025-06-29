@@ -15,10 +15,10 @@ export async function POST(request: NextRequest) {
   try {
     const update: BotUpdate = await request.json()
     
-    // Обрабатываем update асинхронно
-    handleBotUpdateMinimal(update).catch(console.error)
+    // Обрабатываем update СИНХРОННО чтобы ответ отправился сразу
+    await handleBotUpdateMinimal(update)
     
-    // Сразу отвечаем Telegram
+    // Отвечаем Telegram только после отправки сообщения пользователю
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Bot webhook error:', error)
