@@ -23,8 +23,8 @@ async function handleMessage(message: BotMessage) {
   const text = message.text
   const user = message.from
 
-  // Создаем/обновляем пользователя в БД
-  await upsertUser(user)
+  // Создаем/обновляем пользователя в БД (неблокирующе)
+  upsertUser(user)
 
   // Обработка команд
   if (text?.startsWith('/')) {
@@ -32,29 +32,30 @@ async function handleMessage(message: BotMessage) {
   }
 }
 
-// Создание или обновление пользователя
-async function upsertUser(user: BotUser) {
-  try {
-    const { error } = await supabaseAdmin
-      .from('users')
-      .upsert({
-        telegram_id: user.id,
-        username: user.username || null,
-        first_name: user.first_name,
-        last_name: user.last_name || null,
-        language_code: user.language_code || 'ru',
-        is_premium: user.is_premium || false,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'telegram_id'
-      })
-
-    if (error) {
-      console.error('Error upserting user:', error)
-    }
-  } catch (error) {
-    console.error('Error in upsertUser:', error)
-  }
+// Создание или обновление пользователя (неблокирующее)
+function upsertUser(user: BotUser) {
+  // Запускаем в фоне, не ждем результата
+  supabaseAdmin
+    .from('users')
+    .upsert({
+      telegram_id: user.id,
+      username: user.username || null,
+      first_name: user.first_name,
+      last_name: user.last_name || null,
+      language_code: user.language_code || 'ru',
+      is_premium: user.is_premium || false,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'telegram_id'
+    })
+    .then(({ error }) => {
+      if (error) {
+        console.error('Error upserting user:', error)
+      }
+    })
+    .catch(error => {
+      console.error('Error in upsertUser:', error)
+    })
 }
 
 // Обработчик команд
@@ -82,37 +83,37 @@ async function handleCommand(chatId: number, command: string, user: BotUser) {
   }
 }
 
-// Команда /start
+// Команда /start (оптимизированная)
 async function handleStartCommand(chatId: number, user: BotUser) {
-  const welcomeText = `
-🏋️ Добро пожаловать в <b>Pushups Tracker</b>, ${user.first_name}!
+  const welcomeText = `🏋️ Добро пожаловать в <b>Pushups Tracker</b>, ${user.first_name}!
 
-Этот бот поможет вам:
-• 📊 Отслеживать прогресс тренировок
-• ⏰ Напоминать о тренировках в нужное время
-• 💪 Мотивировать на достижение целей
+Этот бот поможет вам отслеживать тренировки отжиманий и напомнит о них в нужное время.
 
-<b>Доступные команды:</b>
-/settings - Настройка напоминаний
-/stats - Ваша статистика
-/help - Помощь
+<b>Команды:</b> /settings /stats /help
 
-Откройте приложение для начала тренировки:
-`
+Откройте приложение для тренировки:`
 
-  const keyboard: BotInlineKeyboardMarkup = {
-    inline_keyboard: [[
-      { 
-        text: '🚀 Открыть приложение', 
-        web_app: { url: process.env.NEXT_PUBLIC_APP_URL! }
-      }
-    ]]
+  try {
+    await telegramBot.sendMessage(chatId, welcomeText, {
+      reply_markup: {
+        inline_keyboard: [[
+          { 
+            text: '🚀 Открыть приложение', 
+            web_app: { url: process.env.NEXT_PUBLIC_APP_URL! }
+          }
+        ]]
+      },
+      parse_mode: 'HTML'
+    })
+  } catch (error) {
+    console.error('Error in handleStartCommand:', error)
+    // Fallback - простое сообщение
+    try {
+      await telegramBot.sendMessage(chatId, `🏋️ Добро пожаловать, ${user.first_name}! Используйте /help для справки.`)
+    } catch (fallbackError) {
+      console.error('Fallback message failed:', fallbackError)
+    }
   }
-
-  await telegramBot.sendMessage(chatId, welcomeText, {
-    reply_markup: keyboard,
-    parse_mode: 'HTML'
-  })
 }
 
 // Команда /settings
