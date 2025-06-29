@@ -1,0 +1,36 @@
+name: Bot Reminders
+
+on:
+  schedule:
+    # Запускается каждые 10 минут
+    # GitHub Actions использует UTC время
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Позволяет запускать workflow вручную
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Send reminders
+        run: |
+          curl -X POST "${{ secrets.APP_URL }}/api/bot/reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP Status: %{http_code}\n" \
+            -o response.json
+          
+          # Проверяем статус ответа
+          if [ $? -eq 0 ]; then
+            echo "✅ Request sent successfully"
+            echo "Response:"
+            cat response.json
+          else
+            echo "❌ Request failed"
+            exit 1
+          fi
+      
+      - name: Log results
+        if: always()
+        run: |
+          echo "Reminder job completed at $(date)"
