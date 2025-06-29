@@ -1,6 +1,85 @@
-import { BotUpdate, BotMessage, BotUser } from '@/types/bot'
+import { BotUpdate, BotUser } from '@/types/bot'
 
-// Прямые HTTP запросы к Telegram API для избежания overhead от библиотеки
+// Edge-совместимый обработчик - без зависимостей от Node.js библиотек
+export async function handleBotUpdateEdge(update: BotUpdate) {
+  const startTime = Date.now()
+  
+  try {
+    if (!update.message) {
+      console.log(`[${Date.now() - startTime}ms] No message in update`)
+      return
+    }
+    
+    const message = update.message
+    const chatId = message.chat.id
+    const text = message.text
+    const user = message.from
+    
+    console.log(`[${Date.now() - startTime}ms] Processing message from ${user.id}: ${text}`)
+    
+    // Обработка команды /start
+    if (text === '/start') {
+      const welcomeText = `🏋️ Добро пожаловать в <b>Pushups Tracker</b>, ${user.first_name}!
+
+Этот бот поможет вам отслеживать тренировки отжиманий и напомнит о них в нужное время.
+
+<b>Команды:</b> /settings /stats /help
+
+Откройте приложение для тренировки:`
+      
+      await sendTelegramMessage(chatId, welcomeText, {
+        reply_markup: {
+          inline_keyboard: [[
+            { 
+              text: '🚀 Открыть приложение', 
+              web_app: { url: process.env.NEXT_PUBLIC_APP_URL! }
+            }
+          ]]
+        }
+      })
+      
+      console.log(`[${Date.now() - startTime}ms] Start command processed`)
+      
+      // Асинхронно создаем/обновляем пользователя
+      updateUserAsync(user)
+    } 
+    // Обработка команды /stats
+    else if (text === '/stats') {
+      await handleStatsCommand(chatId, user.id)
+    }
+    // Обработка команды /settings  
+    else if (text === '/settings') {
+      await handleSettingsCommand(chatId, user.id)
+    }
+    // Обработка команды /help
+    else if (text === '/help') {
+      const helpText = `❓ <b>Помощь</b>
+
+<b>Доступные команды:</b>
+/start - Приветствие и запуск бота
+/settings - Просмотр настроек напоминаний
+/stats - Ваша статистика тренировок
+/help - Эта справка
+
+<b>Совет:</b> Регулярные тренировки - ключ к успеху! 💪`
+      
+      await sendTelegramMessage(chatId, helpText)
+    }
+    // Неизвестная команда
+    else if (text?.startsWith('/')) {
+      await sendTelegramMessage(
+        chatId,
+        '❓ Неизвестная команда. Используйте /help для списка доступных команд.'
+      )
+    }
+    
+    console.log(`[${Date.now() - startTime}ms] Update handling completed`)
+  } catch (error) {
+    console.error(`[${Date.now() - startTime}ms] Error in handleBotUpdateEdge:`, error)
+  }
+}
+
+// Прямые HTTP запросы к Telegram API (Edge-совместимо)
 async function sendTelegramMessage(chatId: number, text: string, options?: any) {
   const startTime = Date.now()
   
@@ -33,65 +112,8 @@ async function sendTelegramMessage(chatId: number, text: string, options?: any) 
   }
 }
 
-// Оптимизированный обработчик
-export async function handleBotUpdateOptimized(update: BotUpdate) {
-  const startTime = Date.now()
-  
-  try {
-    if (!update.message) {
-      console.log(`[${Date.now() - startTime}ms] No message in update`)
-      return
-    }
-    
-    const message = update.message
-    const chatId = message.chat.id
-    const text = message.text
-    const user = message.from
-    
-    console.log(`[${Date.now() - startTime}ms] Processing message from ${user.id}: ${text}`)
-    
-    // Обработка только команды /start для быстрого ответа
-    if (text === '/start') {
-      const welcomeText = `🏋️ Добро пожаловать в <b>Pushups Tracker</b>, ${user.first_name}!
-
-Этот бот поможет вам отслеживать тренировки отжиманий и напомнит о них в нужное время.
-
-<b>Команды:</b> /settings /stats /help
-
-Откройте приложение для тренировки:`
-      
-      await sendTelegramMessage(chatId, welcomeText, {
-        reply_markup: {
-          inline_keyboard: [[
-            { 
-              text: '🚀 Открыть приложение', 
-              web_app: { url: process.env.NEXT_PUBLIC_APP_URL! }
-            }
-          ]]
-        }
-      })
-      
-      console.log(`[${Date.now() - startTime}ms] Start command processed`)
-      
-      // Асинхронно создаем/обновляем пользователя
-      updateUserAsync(user)
-    } else if (text?.startsWith('/')) {
-      // Для остальных команд - обрабатываем их без предварительного сообщения
-      // Не используем await чтобы не задерживать ответ Telegram
-      processCommandAsync(chatId, text, user).catch(error => {
-        console.error(`Error processing command ${text}:`, error)
-      })
-    }
-    
-    console.log(`[${Date.now() - startTime}ms] Update handling completed`)
-  } catch (error) {
-    console.error(`[${Date.now() - startTime}ms] Error in handleBotUpdateOptimized:`, error)
-  }
-}
-
-// Асинхронное обновление пользователя
+// Асинхронное обновление пользователя (Edge-совместимо)
 function updateUserAsync(user: BotUser) {
-  // Используем fetch для Supabase API напрямую
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
   
@@ -117,71 +139,12 @@ function updateUserAsync(user: BotUser) {
   })
 }
 
-// Асинхронная обработка команд
-async function processCommandAsync(chatId: number, command: string, user: BotUser) {
-  const [cmd] = command.split(' ')
-  const startTime = Date.now()
-  
-  console.log(`[processCommandAsync] Starting ${cmd} for user ${user.id}`)
-  
-  try {
-    switch (cmd) {
-      case '/stats':
-        await handleStatsCommand(chatId, user.id)
-        break
-        
-      case '/settings':
-        // Временно используем старый обработчик для settings
-        const { handleBotUpdate } = await import('./handlers')
-        await handleBotUpdate({
-          message: {
-            chat: { id: chatId, type: 'private' },
-            from: user,
-            text: command,
-            message_id: 0,
-            date: Math.floor(Date.now() / 1000)
-          }
-        })
-        break
-        
-      case '/help':
-        const helpText = `❓ <b>Помощь</b>
-
-<b>Доступные команды:</b>
-/start - Приветствие и запуск бота
-/settings - Просмотр настроек напоминаний
-/stats - Ваша статистика тренировок
-/help - Эта справка
-
-<b>Совет:</b> Регулярные тренировки - ключ к успеху! 💪`
-        
-        await sendTelegramMessage(chatId, helpText)
-        break
-        
-      default:
-        await sendTelegramMessage(
-          chatId,
-          '❓ Неизвестная команда. Используйте /help для списка доступных команд.'
-        )
-    }
-    
-    console.log(`[processCommandAsync] Completed ${cmd} in ${Date.now() - startTime}ms`)
-  } catch (error) {
-    console.error(`[processCommandAsync] Error processing ${cmd}:`, error)
-    await sendTelegramMessage(
-      chatId,
-      '❌ Произошла ошибка при обработке команды. Попробуйте позже.'
-    )
-  }
-}
-
-// Оптимизированный обработчик команды /stats
+// Edge-совместимый обработчик команды /stats
 async function handleStatsCommand(chatId: number, userId: number) {
   const startTime = Date.now()
   console.log(`[handleStatsCommand] Starting for user ${userId}`)
   
   try {
-    // Прямой запрос к Supabase API
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     
@@ -252,7 +215,72 @@ async function handleStatsCommand(chatId: number, userId: number) {
   }
 }
 
-// Вспомогательная функция для склонения слова "день"
+// Edge-совместимый обработчик команды /settings
+async function handleSettingsCommand(chatId: number, userId: number) {
+  const startTime = Date.now()
+  console.log(`[handleSettingsCommand] Starting for user ${userId}`)
+  
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/reminder_settings?user_id=eq.${userId}&select=*`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    console.log(`[handleSettingsCommand] Supabase responded in ${Date.now() - startTime}ms`)
+    
+    const data = await response.json()
+    const settings = data?.[0] || {
+      days_of_week: [1, 3, 5],
+      reminder_time: '09:00:00',
+      timezone: 'Europe/Moscow',
+      enabled: true
+    }
+    
+    const daysText = formatDaysOfWeek(settings.days_of_week || [1, 3, 5])
+    const timeText = formatTime(settings.reminder_time || '09:00:00')
+    
+    const settingsText = `⚙️ <b>Настройки напоминаний</b>
+
+🗓️ <b>Дни:</b> ${daysText}
+⏰ <b>Время:</b> ${timeText}
+🌍 <b>Часовой пояс:</b> ${settings.timezone}
+🔔 <b>Включены:</b> ${settings.enabled ? '✅ Да' : '❌ Нет'}
+
+Для изменения настроек откройте приложение:`
+    
+    const replyMarkup = {
+      inline_keyboard: [[
+        { 
+          text: '⚙️ Изменить настройки', 
+          web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/settings` }
+        }
+      ]]
+    }
+    
+    console.log(`[handleSettingsCommand] Sending message after ${Date.now() - startTime}ms`)
+    
+    await sendTelegramMessage(chatId, settingsText, {
+      reply_markup: replyMarkup,
+      parse_mode: 'HTML'
+    })
+    
+    console.log(`[handleSettingsCommand] Completed in ${Date.now() - startTime}ms`)
+  } catch (error) {
+    console.error(`[handleSettingsCommand] Error after ${Date.now() - startTime}ms:`, error)
+    await sendTelegramMessage(
+      chatId,
+      '❌ Произошла ошибка при загрузке настроек. Попробуйте позже.'
+    )
+  }
+}
+
+// Вспомогательные функции
 function getDaysWord(count: number): string {
   const lastDigit = count % 10
   const lastTwoDigits = count % 100
@@ -270,4 +298,22 @@ function getDaysWord(count: number): string {
   }
 
   return 'дней'
+}
+
+function formatDaysOfWeek(days: number[]): string {
+  const dayNames = {
+    1: 'Пн',
+    2: 'Вт', 
+    3: 'Ср',
+    4: 'Чт',
+    5: 'Пт',
+    6: 'Сб',
+    0: 'Вс'
+  }
+  
+  return days.map(d => dayNames[d as keyof typeof dayNames] || d).join(', ')
+}
+
+function formatTime(time: string): string {
+  return time.slice(0, 5) // Отсекаем секунды, оставляем HH:MM
 }

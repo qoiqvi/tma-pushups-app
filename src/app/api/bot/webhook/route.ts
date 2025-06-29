@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { handleBotUpdateOptimized } from '@/lib/bot/handlers-optimized'
+import { handleBotUpdateEdge } from '@/lib/bot/handlers-edge'
 import { verifyTelegramWebhook } from '@/lib/bot/utils'
 import { BotUpdate } from '@/types/bot'
 
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     console.log(`[${Date.now() - startTime}ms] Received update from user ${userId}: ${command}`)
     
     // Обрабатываем update асинхронно, чтобы быстро ответить Telegram
-    handleBotUpdateOptimized(update).catch(error => {
+    handleBotUpdateEdge(update).catch(error => {
       console.error(`[${Date.now() - startTime}ms] Error handling bot update:`, error)
     })
     
