@@ -19,7 +19,9 @@ export async function POST(request: NextRequest) {
     const update: BotUpdate = await request.json()
     
     // Логируем update с временем
-    console.log(`[${Date.now() - startTime}ms] Received update:`, JSON.stringify(update, null, 2))
+    const command = update.message?.text || 'no text'
+    const userId = update.message?.from?.id || 'unknown'
+    console.log(`[${Date.now() - startTime}ms] Received update from user ${userId}: ${command}`)
     
     // Обрабатываем update асинхронно, чтобы быстро ответить Telegram
     handleBotUpdateOptimized(update).catch(error => {

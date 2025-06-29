@@ -76,14 +76,11 @@ export async function handleBotUpdateOptimized(update: BotUpdate) {
       // Асинхронно создаем/обновляем пользователя
       updateUserAsync(user)
     } else if (text?.startsWith('/')) {
-      // Для остальных команд - простые ответы
-      await sendTelegramMessage(
-        chatId,
-        '⏳ Команда обрабатывается. Пожалуйста, подождите...'
-      )
-      
-      // Затем обрабатываем в фоне
-      processCommandAsync(chatId, text, user)
+      // Для остальных команд - обрабатываем их без предварительного сообщения
+      // Не используем await чтобы не задерживать ответ Telegram
+      processCommandAsync(chatId, text, user).catch(error => {
+        console.error(`Error processing command ${text}:`, error)
+      })
     }
     
     console.log(`[${Date.now() - startTime}ms] Update handling completed`)
@@ -123,12 +120,18 @@ function updateUserAsync(user: BotUser) {
 // Асинхронная обработка команд
 async function processCommandAsync(chatId: number, command: string, user: BotUser) {
   const [cmd] = command.split(' ')
+  const startTime = Date.now()
+  
+  console.log(`[processCommandAsync] Starting ${cmd} for user ${user.id}`)
   
   try {
     switch (cmd) {
-      case '/settings':
       case '/stats':
-        // Эти команды требуют запросов к БД - обрабатываем их через основной handler
+        await handleStatsCommand(chatId, user.id)
+        break
+        
+      case '/settings':
+        // Временно используем старый обработчик для settings
         const { handleBotUpdate } = await import('./handlers')
         await handleBotUpdate({
           message: {
@@ -161,11 +164,110 @@ async function processCommandAsync(chatId: number, command: string, user: BotUse
           '❓ Неизвестная команда. Используйте /help для списка доступных команд.'
         )
     }
+    
+    console.log(`[processCommandAsync] Completed ${cmd} in ${Date.now() - startTime}ms`)
   } catch (error) {
-    console.error('Error processing command:', error)
+    console.error(`[processCommandAsync] Error processing ${cmd}:`, error)
     await sendTelegramMessage(
       chatId,
       '❌ Произошла ошибка при обработке команды. Попробуйте позже.'
     )
   }
+}
+
+// Оптимизированный обработчик команды /stats
+async function handleStatsCommand(chatId: number, userId: number) {
+  const startTime = Date.now()
+  console.log(`[handleStatsCommand] Starting for user ${userId}`)
+  
+  try {
+    // Прямой запрос к Supabase API
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/user_stats?user_id=eq.${userId}&select=*`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    console.log(`[handleStatsCommand] Supabase responded in ${Date.now() - startTime}ms`)
+    
+    const data = await response.json()
+    const stats = data?.[0]
+    
+    let messageText: string
+    let replyMarkup: any
+    
+    if (!stats || stats.total_workouts === 0) {
+      messageText = `📊 <b>Ваша статистика</b>
+
+У вас пока нет тренировок. Начните свою первую тренировку прямо сейчас!`
+      replyMarkup = {
+        inline_keyboard: [[
+          { 
+            text: '💪 Начать тренировку', 
+            web_app: { url: process.env.NEXT_PUBLIC_APP_URL! }
+          }
+        ]]
+      }
+    } else {
+      messageText = `📊 <b>Ваша статистика</b>
+
+🏋️ <b>Всего тренировок:</b> ${stats.total_workouts}
+💪 <b>Всего отжиманий:</b> ${stats.total_reps}
+📈 <b>Среднее за тренировку:</b> ${Math.round(stats.avg_reps_per_workout || 0)}
+🏆 <b>Личный рекорд:</b> ${stats.personal_best_reps || 0} отжиманий
+🔥 <b>Текущая серия:</b> ${stats.current_streak || 0} ${getDaysWord(stats.current_streak || 0)}
+⚡ <b>Лучшая серия:</b> ${stats.max_streak || 0} ${getDaysWord(stats.max_streak || 0)}
+
+Откройте приложение для подробной статистики:`
+      
+      replyMarkup = {
+        inline_keyboard: [[
+          { 
+            text: '📈 Подробная статистика', 
+            web_app: { url: `${process.env.NEXT_PUBLIC_APP_URL}/stats` }
+          }
+        ]]
+      }
+    }
+    
+    console.log(`[handleStatsCommand] Sending message after ${Date.now() - startTime}ms`)
+    
+    await sendTelegramMessage(chatId, messageText, {
+      reply_markup: replyMarkup,
+      parse_mode: 'HTML'
+    })
+    
+    console.log(`[handleStatsCommand] Completed in ${Date.now() - startTime}ms`)
+  } catch (error) {
+    console.error(`[handleStatsCommand] Error after ${Date.now() - startTime}ms:`, error)
+    await sendTelegramMessage(
+      chatId,
+      '❌ Произошла ошибка при загрузке статистики. Попробуйте позже.'
+    )
+  }
+}
+
+// Вспомогательная функция для склонения слова "день"
+function getDaysWord(count: number): string {
+  const lastDigit = count % 10
+  const lastTwoDigits = count % 100
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return 'дней'
+  }
+
+  if (lastDigit === 1) {
+    return 'день'
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return 'дня'
+  }
+
+  return 'дней'
 }
