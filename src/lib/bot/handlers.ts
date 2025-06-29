@@ -131,8 +131,8 @@ async function handleSettingsCommand(chatId: number, userId: number) {
       enabled: true
     }
 
-    const daysText = formatDaysOfWeek(currentSettings.days_of_week)
-    const timeText = formatTime(currentSettings.reminder_time)
+    const daysText = formatDaysOfWeek(currentSettings.days_of_week || [1, 3, 5])
+    const timeText = formatTime(currentSettings.reminder_time || '09:00:00')
 
     const settingsText = `
 ⚙️ <b>Настройки напоминаний</b>
@@ -205,10 +205,10 @@ async function handleStatsCommand(chatId: number, userId: number) {
 
 🏋️ <b>Всего тренировок:</b> ${stats.total_workouts}
 💪 <b>Всего отжиманий:</b> ${stats.total_reps}
-📈 <b>Среднее за тренировку:</b> ${Math.round(stats.avg_reps_per_workout)}
-🏆 <b>Личный рекорд:</b> ${stats.personal_best_reps} отжиманий
-🔥 <b>Текущая серия:</b> ${stats.current_streak} ${getDaysWord(stats.current_streak)}
-⚡ <b>Лучшая серия:</b> ${stats.max_streak} ${getDaysWord(stats.max_streak)}
+📈 <b>Среднее за тренировку:</b> ${Math.round(stats.avg_reps_per_workout || 0)}
+🏆 <b>Личный рекорд:</b> ${stats.personal_best_reps || 0} отжиманий
+🔥 <b>Текущая серия:</b> ${stats.current_streak || 0} ${getDaysWord(stats.current_streak || 0)}
+⚡ <b>Лучшая серия:</b> ${stats.max_streak || 0} ${getDaysWord(stats.max_streak || 0)}
 
 Откройте приложение для подробной статистики:
 `

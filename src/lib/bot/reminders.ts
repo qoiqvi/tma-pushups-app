@@ -1,4 +1,5 @@
-import { format, utcToZonedTime } from 'date-fns-tz'
+import { format } from 'date-fns'
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz'
 import { telegramBot } from './telegram'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { BotInlineKeyboardMarkup } from '@/types/bot'
@@ -42,9 +43,8 @@ export async function sendReminders() {
   for (const setting of settings) {
     try {
       // Проверяем время с учетом часового пояса пользователя
-      const userTime = utcToZonedTime(now, setting.timezone || 'Europe/Moscow')
-      const userTimeString = format(userTime, 'HH:mm')
-      const reminderTime = setting.reminder_time.slice(0, 5)
+      const userTimeString = formatInTimeZone(now, setting.timezone || 'Europe/Moscow', 'HH:mm')
+      const reminderTime = (setting.reminder_time || '09:00:00').slice(0, 5)
 
       console.log(`User ${setting.user_id}: ${userTimeString} vs ${reminderTime} (${setting.timezone})`)
 
@@ -136,9 +136,9 @@ async function sendReminderMessage(
 
   let motivationText = ''
   if (stats) {
-    if (stats.current_streak > 0) {
-      motivationText = `\n\n🔥 Ваша текущая серия: ${stats.current_streak} ${getDaysWord(stats.current_streak)}. Не прерывайте её!`
-    } else if (stats.total_workouts > 0) {
+    if ((stats.current_streak || 0) > 0) {
+      motivationText = `\n\n🔥 Ваша текущая серия: ${stats.current_streak || 0} ${getDaysWord(stats.current_streak || 0)}. Не прерывайте её!`
+    } else if ((stats.total_workouts || 0) > 0) {
       motivationText = '\n\n💫 Время начать новую серию тренировок!'
     }
   }
