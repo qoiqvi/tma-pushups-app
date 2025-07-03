@@ -4,7 +4,6 @@ import { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, Clock, Calendar } from 'lucide-react';
 import { useWorkouts } from '@/hooks/useWorkouts';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { SkeletonCard } from '@/components/shared/SkeletonCard';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ErrorState } from '@/components/shared/ErrorState';
