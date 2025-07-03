@@ -124,3 +124,55 @@ export function usePeriodStats(period: 'week' | 'month' | 'all' = 'week') {
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
 }
+
+// Хук для получения истории тренировок (для графика)
+export function useWorkoutHistory(period: 'week' | 'month' | 'all' = 'week') {
+  return useQuery({
+    queryKey: ['workoutHistory', period],
+    queryFn: async () => {
+      const response = await fetch(`/api/workouts?period=${period}&limit=50`, {
+        headers: {
+          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch workout history')
+      }
+      
+      return response.json()
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Хук для получения личных рекордов
+export function usePersonalRecords() {
+  return useQuery({
+    queryKey: ['personalRecords'],
+    queryFn: async () => {
+      const response = await fetch('/api/stats?records=true', {
+        headers: {
+          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch personal records')
+      }
+      
+      const result = await response.json()
+      return {
+        most_reps: result.personal_records?.most_reps || null,
+        longest_workout: result.personal_records?.longest_workout || null,
+        most_sets: result.personal_records?.most_sets || null,
+        current_streak: result.overall_stats?.current_streak || 0,
+        total_workouts: result.overall_stats?.total_workouts || 0,
+        total_reps: result.overall_stats?.total_reps || 0
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}

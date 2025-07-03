@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Activity, BarChart3, Settings } from 'lucide-react';
 import { Link } from '@/components/Link/Link';
 import { classNames } from '@/css/classnames';
+import { haptics } from '@/utils/haptics';
 
 interface NavItem {
   href: string;
@@ -48,6 +49,7 @@ export const Navigation: FC = () => {
             <Link
               key={href}
               href={href}
+              onClick={() => haptics.navigationChange()}
               className={classNames(
                 'flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 text-xs transition-colors',
                 isActive 

@@ -11,6 +11,7 @@ import { AppRoot } from '@telegram-apps/telegram-ui';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorPage } from '@/components/ErrorPage';
 import { TelegramInit } from '@/components/TelegramInit/TelegramInit';
+import { ToastProvider } from '@/components/shared/ToastProvider';
 import { useDidMount } from '@/hooks/useDidMount';
 
 import './styles.css';
@@ -26,7 +27,9 @@ function RootInner({ children }: PropsWithChildren) {
         ['macos', 'ios'].includes(lp.tgWebAppPlatform) ? 'ios' : 'base'
       }
     >
-      {children}
+      <ToastProvider>
+        {children}
+      </ToastProvider>
     </AppRoot>
   );
 }

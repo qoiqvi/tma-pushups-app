@@ -6,10 +6,13 @@ import { Activity, Clock, Calendar } from 'lucide-react';
 import { useWorkouts } from '@/hooks/useWorkouts';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { SkeletonCard } from '@/components/shared/SkeletonCard';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/components/Link/Link';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 
 interface LastWorkoutCardProps {
   className?: string;
@@ -17,6 +20,7 @@ interface LastWorkoutCardProps {
 
 export const LastWorkoutCard: FC<LastWorkoutCardProps> = ({ className }) => {
   const { data: workoutsData, isLoading, error, refetch } = useWorkouts(1, 0);
+  const router = useRouter();
 
   if (isLoading) {
     return <SkeletonCard className={className} />;
@@ -24,20 +28,12 @@ export const LastWorkoutCard: FC<LastWorkoutCardProps> = ({ className }) => {
 
   if (error) {
     return (
-      <Card className={className}>
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground mb-4">
-            Ошибка загрузки последней тренировки
-          </p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => refetch()}
-          >
-            Повторить
-          </Button>
-        </CardContent>
-      </Card>
+      <ErrorState
+        title="Ошибка загрузки"
+        message="Не удалось загрузить последнюю тренировку"
+        onAction={refetch}
+        className={className}
+      />
     );
   }
 
@@ -45,26 +41,14 @@ export const LastWorkoutCard: FC<LastWorkoutCardProps> = ({ className }) => {
 
   if (!lastWorkout) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
-            Последняя тренировка
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <p className="text-muted-foreground mb-4">
-              У вас еще нет тренировок
-            </p>
-            <Link href="/workout">
-              <Button className="bg-pink-gradient">
-                Начать первую тренировку
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        variant="workouts"
+        title="Пока нет тренировок"
+        message="Начните свой фитнес-путь! Создайте первую тренировку и отслеживайте прогресс."
+        actionLabel="Начать тренировку"
+        onAction={() => router.push('/workout')}
+        className={className}
+      />
     );
   }
 

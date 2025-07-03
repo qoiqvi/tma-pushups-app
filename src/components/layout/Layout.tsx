@@ -3,6 +3,7 @@
 import { FC, PropsWithChildren } from 'react';
 import { Page } from '@/components/Page';
 import { Navigation } from './Navigation';
+import { PageTransition } from '@/components/shared/PageTransition';
 
 interface LayoutProps {
   /**
@@ -27,7 +28,9 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
       <div className="min-h-screen bg-background">
         {/* Main content area with bottom padding for navigation */}
         <main className={showNavigation ? 'pb-20' : ''}>
-          {children}
+          <PageTransition>
+            {children}
+          </PageTransition>
         </main>
         
         {/* Bottom navigation */}
