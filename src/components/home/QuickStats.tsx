@@ -4,7 +4,6 @@ import { FC } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, TrendingUp, Zap } from 'lucide-react';
 import { useOverallStats } from '@/hooks/useStats';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { SkeletonCard } from '@/components/shared/SkeletonCard';
 import { Button } from '@/components/ui/button';
 

@@ -149,7 +149,7 @@ export const LastWorkoutCard: FC<LastWorkoutCardProps> = ({ className }) => {
           {/* Notes if available */}
           {lastWorkout.notes && (
             <div className="text-sm text-muted-foreground italic">
-              "{lastWorkout.notes}"
+              &ldquo;{lastWorkout.notes}&rdquo;
             </div>
           )}
         </div>
