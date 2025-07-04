@@ -7,6 +7,9 @@ import {
   ThemeToggle, 
   AboutSection 
 } from '@/components/settings';
+import { Link } from '@/components/Link/Link';
+import { Button } from '@/components/ui/button';
+import { Bug } from 'lucide-react';
 
 export default function SettingsPage() {
   return (
@@ -31,6 +34,16 @@ export default function SettingsPage() {
 
         {/* About Section */}
         <AboutSection />
+
+        {/* Debug Link - всегда показываем для отладки */}
+        <div className="pt-4 border-t">
+          <Link href="/debug">
+            <Button variant="outline" className="w-full">
+              <Bug className="h-4 w-4 mr-2" />
+              Debug Page
+            </Button>
+          </Link>
+        </div>
       </div>
     </Layout>
   );

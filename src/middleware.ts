@@ -14,9 +14,10 @@ export function middleware(request: NextRequest) {
   // Получаем initData из заголовка
   const initData = request.headers.get('X-Telegram-Init-Data')
   
-  console.log('[Middleware] Path:', request.nextUrl.pathname)
-  console.log('[Middleware] InitData present:', !!initData)
-  console.log('[Middleware] NODE_ENV:', process.env.NODE_ENV)
+  // Логирование убираем из middleware, так как он работает на сервере
+  // console.log('[Middleware] Path:', request.nextUrl.pathname)
+  // console.log('[Middleware] InitData present:', !!initData)
+  // console.log('[Middleware] NODE_ENV:', process.env.NODE_ENV)
   
   // В режиме разработки используем mock данные
   if (!initData && process.env.NODE_ENV === 'development') {
@@ -56,7 +57,7 @@ export function middleware(request: NextRequest) {
   
   const user = parseInitData(initData)
   
-  console.log('[Middleware] Parsed user:', user)
+  // console.log('[Middleware] Parsed user:', user)
   
   if (!user) {
     console.error('[Middleware] Failed to parse user from initData:', initData)

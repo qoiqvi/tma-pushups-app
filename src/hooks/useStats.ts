@@ -1,6 +1,7 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import '@/types/telegram'
 import { getTelegramInitData } from '@/lib/telegram/mock'
+import { logger } from '@/lib/debug'
 
 interface OverallStats {
   total_workouts: number
@@ -62,17 +63,26 @@ export function useOverallStats() {
   return useQuery({
     queryKey: ['stats', 'overall'],
     queryFn: async () => {
+      logger.info('Fetching overall stats...')
+      const initData = getTelegramInitData()
+      logger.info('InitData for stats', { length: initData.length })
+      
       const response = await fetch('/api/stats?period=all', {
         headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
+          'X-Telegram-Init-Data': initData,
         },
       })
       
+      logger.info('Stats response', { status: response.status, ok: response.ok })
+      
       if (!response.ok) {
+        const error = await response.text()
+        logger.error('Failed to fetch overall stats', { status: response.status, error })
         throw new Error('Failed to fetch overall stats')
       }
       
       const result = await response.json()
+      logger.info('Stats loaded successfully', result.overall_stats)
       return result.overall_stats
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
