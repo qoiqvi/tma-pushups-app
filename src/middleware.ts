@@ -40,6 +40,28 @@ export function middleware(request: NextRequest) {
     })
   }
   
+  // ВРЕМЕННОЕ РЕШЕНИЕ: Если нет initData но есть данные в URL, используем ID Димы
+  if (!initData && request.url.includes('693920846')) {
+    const tempUser = {
+      id: 693920846,
+      first_name: 'Дима',
+      last_name: '',
+      username: 'amasasin',
+      language_code: 'ru',
+      is_premium: true
+    }
+    
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('X-User-Id', tempUser.id.toString())
+    requestHeaders.set('X-User-Data', JSON.stringify(tempUser))
+    
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      }
+    })
+  }
+  
   if (!initData) {
     return NextResponse.json(
       { error: 'Unauthorized' },
