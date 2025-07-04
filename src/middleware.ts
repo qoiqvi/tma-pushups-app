@@ -14,6 +14,31 @@ export function middleware(request: NextRequest) {
   // Получаем initData из заголовка
   const initData = request.headers.get('X-Telegram-Init-Data')
   
+  console.log('[Middleware] Path:', request.nextUrl.pathname)
+  console.log('[Middleware] InitData present:', !!initData)
+  console.log('[Middleware] NODE_ENV:', process.env.NODE_ENV)
+  
+  // В режиме разработки используем mock данные
+  if (!initData && process.env.NODE_ENV === 'development') {
+    const mockUser = {
+      id: 12345,
+      first_name: 'Test',
+      last_name: 'User',
+      username: 'testuser',
+      language_code: 'ru'
+    }
+    
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('X-User-Id', mockUser.id.toString())
+    requestHeaders.set('X-User-Data', JSON.stringify(mockUser))
+    
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      }
+    })
+  }
+  
   if (!initData) {
     return NextResponse.json(
       { error: 'Unauthorized' },
@@ -31,7 +56,10 @@ export function middleware(request: NextRequest) {
   
   const user = parseInitData(initData)
   
+  console.log('[Middleware] Parsed user:', user)
+  
   if (!user) {
+    console.error('[Middleware] Failed to parse user from initData:', initData)
     return NextResponse.json(
       { error: 'Invalid user data' },
       { status: 401 }

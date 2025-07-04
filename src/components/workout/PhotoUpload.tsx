@@ -4,6 +4,7 @@ import { FC, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, Image as ImageIcon, Upload, X, Loader2, AlertCircle } from 'lucide-react';
+import { getTelegramInitData } from '@/lib/telegram/mock';
 
 interface PhotoUploadProps {
   workoutId: string;
@@ -81,7 +82,7 @@ export const PhotoUpload: FC<PhotoUploadProps> = ({
       const response = await fetch('/api/photos/upload', {
         method: 'POST',
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
         body: formData
       });

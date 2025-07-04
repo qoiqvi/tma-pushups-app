@@ -3,6 +3,7 @@
 import { FC, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TelegramUser } from '@/types/telegram';
+import { getTelegramInitData } from '@/lib/telegram/mock';
 
 interface WelcomeCardProps {
   className?: string;

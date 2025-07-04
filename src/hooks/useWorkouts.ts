@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query'
 import '@/types/telegram'
+import { getTelegramInitData } from '@/lib/telegram/mock'
 
 interface Workout {
   id: string
@@ -50,7 +51,7 @@ export function useWorkouts(limit = 10, offset = 0): UseQueryResult<WorkoutsResp
     queryFn: async () => {
       const response = await fetch(`/api/workouts?limit=${limit}&offset=${offset}`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -72,7 +73,7 @@ export function useWorkout(id: string): UseQueryResult<Workout, Error> {
     queryFn: async () => {
       const response = await fetch(`/api/workouts/${id}`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -98,7 +99,7 @@ export function useCreateWorkout(): UseMutationResult<Workout, Error, CreateWork
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
         body: JSON.stringify(data)
       })
@@ -128,7 +129,7 @@ export function useUpdateWorkout(id: string): UseMutationResult<Workout, Error, 
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
         body: JSON.stringify(data)
       })
@@ -161,7 +162,7 @@ export function useDeleteWorkout(): UseMutationResult<{ success: boolean }, Erro
       const response = await fetch(`/api/workouts/${id}`, {
         method: 'DELETE',
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -189,7 +190,7 @@ export function useActiveWorkout() {
     queryFn: async () => {
       const response = await fetch('/api/workouts?limit=1&offset=0', {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       

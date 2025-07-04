@@ -1,5 +1,6 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import '@/types/telegram'
+import { getTelegramInitData } from '@/lib/telegram/mock'
 
 interface OverallStats {
   total_workouts: number
@@ -41,7 +42,7 @@ export function useStats(period: 'week' | 'month' | 'all' = 'week'): UseQueryRes
     queryFn: async () => {
       const response = await fetch(`/api/stats?period=${period}`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -63,7 +64,7 @@ export function useOverallStats() {
     queryFn: async () => {
       const response = await fetch('/api/stats?period=all', {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -86,7 +87,7 @@ export function useChartData(period: 'week' | 'month' | 'all' = 'week') {
     queryFn: async () => {
       const response = await fetch(`/api/stats?period=${period}`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -109,7 +110,7 @@ export function usePeriodStats(period: 'week' | 'month' | 'all' = 'week') {
     queryFn: async () => {
       const response = await fetch(`/api/stats?period=${period}`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -132,7 +133,7 @@ export function useWorkoutHistory(period: 'week' | 'month' | 'all' = 'week') {
     queryFn: async () => {
       const response = await fetch(`/api/workouts?period=${period}&limit=50`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -154,7 +155,7 @@ export function usePersonalRecords() {
     queryFn: async () => {
       const response = await fetch('/api/stats?records=true', {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       

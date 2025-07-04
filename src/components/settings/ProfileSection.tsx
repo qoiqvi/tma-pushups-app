@@ -4,6 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Crown, Star } from 'lucide-react';
 import { TelegramUser } from '@/types/telegram';
+import { getTelegramInitData } from '@/lib/telegram/mock';
 
 interface ProfileSectionProps {
   className?: string;

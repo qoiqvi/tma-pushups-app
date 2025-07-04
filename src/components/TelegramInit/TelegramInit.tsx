@@ -11,6 +11,7 @@ import {
   mainButton,
   init,
 } from '@telegram-apps/sdk-react';
+import { UserInit } from '@/components/UserInit/UserInit';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -117,7 +118,9 @@ export function TelegramInit({ children }: PropsWithChildren) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <UserInit>
+        {children}
+      </UserInit>
     </QueryClientProvider>
   );
 }

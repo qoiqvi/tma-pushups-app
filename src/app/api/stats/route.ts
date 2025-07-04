@@ -7,6 +7,8 @@ import { startOfWeek, endOfWeek, subDays, format, parseISO, differenceInDays } f
 export async function GET(request: NextRequest) {
   const userId = getUserIdFromRequest(request)
   
+  console.log('[Stats API] User ID:', userId)
+  
   if (!userId) {
     return NextResponse.json(
       { error: 'User not found' },
@@ -57,7 +59,13 @@ export async function GET(request: NextRequest) {
     
     const { data: workouts, error: workoutsError } = await workoutsQuery
     
+    console.log('[Stats API] Workouts query result:', { 
+      count: workouts?.length || 0, 
+      error: workoutsError?.message 
+    })
+    
     if (workoutsError) {
+      console.error('[Stats API] Workouts error:', workoutsError)
       return NextResponse.json(
         { error: workoutsError.message },
         { status: 500 }

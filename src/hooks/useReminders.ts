@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query'
 import '@/types/telegram'
+import { getTelegramInitData } from '@/lib/telegram/mock'
 
 interface ReminderSettings {
   user_id: number
@@ -26,7 +27,7 @@ export function useReminderSettings(): UseQueryResult<ReminderSettings, Error> {
     queryFn: async () => {
       const response = await fetch('/api/reminders', {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -51,7 +52,7 @@ export function useUpdateReminderSettings(): UseMutationResult<ReminderSettings,
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
         body: JSON.stringify(data)
       })

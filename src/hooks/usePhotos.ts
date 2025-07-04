@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query'
 import '@/types/telegram'
+import { getTelegramInitData } from '@/lib/telegram/mock'
 
 interface WorkoutPhoto {
   id: string
@@ -18,7 +19,7 @@ export function useWorkoutPhotos(workoutId: string): UseQueryResult<WorkoutPhoto
     queryFn: async () => {
       const response = await fetch(`/api/workouts/${workoutId}/photos`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -41,7 +42,7 @@ export function usePhoto(photoId: string): UseQueryResult<WorkoutPhoto, Error> {
     queryFn: async () => {
       const response = await fetch(`/api/photos/${photoId}`, {
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
       })
       
@@ -66,7 +67,7 @@ export function useUploadPhoto(): UseMutationResult<WorkoutPhoto, Error, FormDat
       const response = await fetch('/api/photos/upload', {
         method: 'POST',
         headers: {
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
         body: formData
       })
@@ -100,7 +101,7 @@ export function useProcessPhoto(): UseMutationResult<{ success: boolean; url: st
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || '',
+          'X-Telegram-Init-Data': getTelegramInitData(),
         },
         body: JSON.stringify({ photoId })
       })
