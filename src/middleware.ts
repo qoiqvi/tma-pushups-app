@@ -8,7 +8,8 @@ export function middleware(request: NextRequest) {
       request.nextUrl.pathname.startsWith('/api/auth') ||
       request.nextUrl.pathname.startsWith('/api/bot') ||
       request.nextUrl.pathname.startsWith('/api/health') ||
-      request.nextUrl.pathname.startsWith('/api/debug-env')) {
+      request.nextUrl.pathname.startsWith('/api/debug-env') ||
+      request.nextUrl.pathname.startsWith('/api/test-auth')) {
     return NextResponse.next()
   }
   

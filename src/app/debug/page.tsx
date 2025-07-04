@@ -77,9 +77,12 @@ export default function DebugPage() {
   const testAPI = async (endpoint: string) => {
     logger.info(`Testing ${endpoint}...`);
     try {
+      const initData = getTelegramInitData();
+      logger.info(`Sending InitData:`, { length: initData.length, preview: initData.substring(0, 50) + '...' });
+      
       const response = await fetch(endpoint, {
         headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
+          'X-Telegram-Init-Data': initData,
         },
       });
       
@@ -101,6 +104,33 @@ export default function DebugPage() {
     } catch (error: any) {
       logger.error(`${endpoint} - Exception: ${error.message}`);
       setTestResult({ endpoint, error: error.message });
+    }
+  };
+
+  const testAuthFlow = async () => {
+    logger.info('Testing auth flow...');
+    try {
+      const initData = getTelegramInitData();
+      logger.info('Testing with InitData:', { 
+        length: initData.length,
+        hasUser: initData.includes('user='),
+        hasHash: initData.includes('hash=')
+      });
+      
+      const response = await fetch('/api/test-auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Telegram-Init-Data': initData,
+        },
+        body: JSON.stringify({ test: true })
+      });
+      
+      const data = await response.json();
+      logger.info('Auth test result:', data);
+      setTestResult({ action: 'testAuth', data });
+    } catch (error: any) {
+      logger.error(`Auth test error: ${error.message}`);
     }
   };
 
@@ -218,6 +248,9 @@ export default function DebugPage() {
               </Button>
               <Button size="sm" onClick={() => testAPI('/api/health')} variant="secondary">
                 Health Check
+              </Button>
+              <Button size="sm" onClick={testAuthFlow} variant="outline">
+                Test Auth Flow
               </Button>
               <Button size="sm" onClick={() => testAPI('/api/user/me')}>
                 Test User API
