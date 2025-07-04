@@ -3,7 +3,7 @@
 import { FC, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Share2, Download, Loader2, ExternalLink, Eye } from 'lucide-react';
+import { Share2, Download, Loader2, Eye } from 'lucide-react';
 
 interface WorkoutPhoto {
   id: string;

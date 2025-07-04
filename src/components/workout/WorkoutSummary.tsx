@@ -176,7 +176,7 @@ export const WorkoutSummary: FC<WorkoutSummaryProps> = ({
           </CardHeader>
           <CardContent>
             <div className="grid gap-2">
-              {workout.sets.map((set, index) => (
+              {workout.sets.map((set) => (
                 <div
                   key={set.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-accent/50"
