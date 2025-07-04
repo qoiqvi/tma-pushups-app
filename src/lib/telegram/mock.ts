@@ -32,35 +32,51 @@ export const mockInitData = () => {
 export const getTelegramInitData = () => {
   if (typeof window === 'undefined') return ''
   
-  // Сначала пробуем получить из Telegram SDK
+  // Метод 1: Telegram SDK
   const telegramData = window.Telegram?.WebApp?.initData
-  
   if (telegramData) {
     logger.info('[getTelegramInitData] Found data in Telegram SDK')
     return telegramData
   }
   
-  // Если SDK не работает, пробуем получить из URL (для Telegram Desktop)
+  // Метод 2: URL hash параметры (Telegram Desktop и Web)
   try {
-    const urlParams = new URLSearchParams(window.location.hash.slice(1))
-    const tgWebAppData = urlParams.get('tgWebAppData')
+    // Проверяем несколько вариантов
+    const hash = window.location.hash
     
-    if (tgWebAppData) {
-      // Декодируем данные из URL
-      const decodedData = decodeURIComponent(tgWebAppData)
-      logger.info('[getTelegramInitData] Found data in URL', { length: decodedData.length })
-      return decodedData
+    // Вариант 1: #tgWebAppData=...
+    if (hash.includes('tgWebAppData=')) {
+      const match = hash.match(/tgWebAppData=([^&]+)/)
+      if (match && match[1]) {
+        const decodedData = decodeURIComponent(match[1])
+        logger.info('[getTelegramInitData] Found tgWebAppData in URL', { 
+          length: decodedData.length,
+          preview: decodedData.substring(0, 50) + '...'
+        })
+        return decodedData
+      }
+    }
+    
+    // Вариант 2: Прямые параметры в hash
+    if (hash.includes('user=')) {
+      // Убираем # и возвращаем как есть
+      const cleanHash = hash.startsWith('#') ? hash.substring(1) : hash
+      logger.info('[getTelegramInitData] Found direct params in URL', { 
+        length: cleanHash.length,
+        preview: cleanHash.substring(0, 50) + '...'
+      })
+      return cleanHash
     }
   } catch (e) {
     logger.error('[getTelegramInitData] Error parsing URL data:', e)
   }
   
-  // В режиме разработки используем mock данные
+  // Метод 3: Mock данные для разработки
   if (process.env.NODE_ENV === 'development') {
     logger.info('[getTelegramInitData] Using mock data')
     return mockInitData()
   }
   
-  logger.warn('[getTelegramInitData] No data found')
+  logger.warn('[getTelegramInitData] No data found anywhere')
   return ''
 }

@@ -27,8 +27,12 @@ export default function DebugPage() {
   }, []);
 
   useEffect(() => {
-    // Проверяем Telegram WebApp
+    // Детальная проверка окружения
+    logger.info('=== DEBUG PAGE LOADED ===');
+    logger.info(`URL: ${window.location.href}`);
+    logger.info(`Hash: ${window.location.hash}`);
     logger.info(`Telegram WebApp available: ${!!window.Telegram?.WebApp}`);
+    
     if (window.Telegram?.WebApp) {
       logger.info(`InitData present: ${!!window.Telegram.WebApp.initData}`);
       logger.info(`Version: ${window.Telegram.WebApp.version}`);
@@ -37,15 +41,16 @@ export default function DebugPage() {
     
     // Проверяем initData
     const initData = getTelegramInitData();
-    logger.info(`InitData length: ${initData.length}`);
+    logger.info(`Final InitData length: ${initData.length}`);
     if (initData) {
       try {
         const params = new URLSearchParams(initData);
+        logger.info('InitData params:', Object.fromEntries(params));
         const user = params.get('user');
         if (user) {
           const userData = JSON.parse(user);
-          logger.info(`User ID: ${userData.id}`);
-          logger.info(`User name: ${userData.first_name} ${userData.last_name || ''}`);
+          logger.info(`Parsed User ID: ${userData.id}`);
+          logger.info(`Parsed User name: ${userData.first_name} ${userData.last_name || ''}`);
         }
       } catch (e) {
         logger.error(`Error parsing initData: ${e}`);
