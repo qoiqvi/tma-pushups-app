@@ -104,6 +104,18 @@ export default function DebugPage() {
     }
   };
 
+  const checkServerEnv = async () => {
+    logger.info('Checking server environment variables...');
+    try {
+      const response = await fetch('/api/debug-env');
+      const data = await response.json();
+      logger.info('Server environment:', data.server_env);
+      setTestResult({ action: 'checkServerEnv', data });
+    } catch (error: any) {
+      logger.error(`Check server env error: ${error.message}`);
+    }
+  };
+
   const createTestWorkout = async () => {
     logger.info('Creating test workout...');
     try {
@@ -201,6 +213,9 @@ export default function DebugPage() {
           <div className="space-y-2">
             <h3 className="font-semibold">API Tests</h3>
             <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={checkServerEnv} variant="destructive">
+                Check Server ENV
+              </Button>
               <Button size="sm" onClick={() => testAPI('/api/user/me')}>
                 Test User API
               </Button>
