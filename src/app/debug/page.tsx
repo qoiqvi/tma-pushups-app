@@ -152,6 +152,46 @@ export default function DebugPage() {
             </div>
           )}
 
+          {/* URL информация */}
+          <div className="space-y-2">
+            <h3 className="font-semibold">URL Information</h3>
+            <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
+              {JSON.stringify({
+                href: typeof window !== 'undefined' ? window.location.href : 'N/A',
+                hash: typeof window !== 'undefined' ? window.location.hash : 'N/A',
+                hashParams: typeof window !== 'undefined' ? Object.fromEntries(new URLSearchParams(window.location.hash.slice(1))) : {},
+                telegramWebApp: typeof window !== 'undefined' ? {
+                  available: !!window.Telegram?.WebApp,
+                  initData: window.Telegram?.WebApp?.initData?.substring(0, 50) + '...',
+                  version: window.Telegram?.WebApp?.version,
+                  platform: window.Telegram?.WebApp?.platform,
+                } : 'N/A'
+              }, null, 2)}
+            </pre>
+          </div>
+
+          {/* Переменные окружения */}
+          <div className="space-y-2">
+            <h3 className="font-semibold">Environment Variables</h3>
+            <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
+              {JSON.stringify({
+                NODE_ENV: process.env.NODE_ENV,
+                NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+                NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+                SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ? '***HIDDEN***' : 'NOT SET',
+                TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN ? '***HIDDEN***' : 'NOT SET',
+                CRON_SECRET: process.env.CRON_SECRET ? '***HIDDEN***' : 'NOT SET',
+                NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+                NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
+                NEXT_PUBLIC_BUILD_DATE: process.env.NEXT_PUBLIC_BUILD_DATE,
+                VERCEL: process.env.VERCEL,
+                VERCEL_ENV: process.env.VERCEL_ENV,
+                VERCEL_URL: process.env.VERCEL_URL,
+                VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+              }, null, 2)}
+            </pre>
+          </div>
+
           {/* Кнопки тестирования */}
           <div className="space-y-2">
             <h3 className="font-semibold">API Tests</h3>
