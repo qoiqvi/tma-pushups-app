@@ -40,6 +40,17 @@ export function TelegramInit({ children }: PropsWithChildren) {
         const lp = retrieveLaunchParams();
         console.log('Launch params:', lp);
         
+        // Сохраняем данные Telegram в sessionStorage если они есть в URL
+        const hash = window.location.hash;
+        if (hash && hash.includes('tgWebAppData=')) {
+          const match = hash.match(/tgWebAppData=([^&]+)/);
+          if (match && match[1]) {
+            const decodedData = decodeURIComponent(match[1]);
+            sessionStorage.setItem('telegram_init_data', decodedData);
+            console.log('Saved Telegram data to sessionStorage');
+          }
+        }
+        
         // Инициализируем SDK только если мы внутри Telegram
         if (lp && lp.tgWebAppVersion) {
           console.log('Initializing Telegram SDK...');

@@ -41,8 +41,14 @@ export const getTelegramInitData = () => {
   
   // Метод 2: URL hash параметры (Telegram Desktop и Web)
   try {
-    // Проверяем несколько вариантов
+    const fullUrl = window.location.href
     const hash = window.location.hash
+    
+    logger.info('[getTelegramInitData] Checking URL', { 
+      href: fullUrl.substring(0, 100) + '...',
+      hash: hash.substring(0, 100) + '...',
+      hasHash: hash.length > 0
+    })
     
     // Вариант 1: #tgWebAppData=...
     if (hash.includes('tgWebAppData=')) {
@@ -66,6 +72,20 @@ export const getTelegramInitData = () => {
         preview: cleanHash.substring(0, 50) + '...'
       })
       return cleanHash
+    }
+    
+    // Вариант 3: Проверяем sessionStorage (Telegram может сохранять туда)
+    const storedData = sessionStorage.getItem('telegram_init_data')
+    if (storedData) {
+      logger.info('[getTelegramInitData] Found data in sessionStorage')
+      return storedData
+    }
+    
+    // Вариант 4: Проверяем localStorage как последний fallback
+    const backupData = localStorage.getItem('telegram_init_data_backup')
+    if (backupData) {
+      logger.info('[getTelegramInitData] Found backup data in localStorage')
+      return backupData
     }
   } catch (e) {
     logger.error('[getTelegramInitData] Error parsing URL data:', e)
