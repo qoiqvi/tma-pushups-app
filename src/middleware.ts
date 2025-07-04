@@ -3,11 +3,12 @@ import type { NextRequest } from 'next/server'
 import { parseInitData, validateInitDataFormat } from '@/lib/telegram/validation'
 
 export function middleware(request: NextRequest) {
-  // Пропускаем статику, auth routes, bot routes и health check
+  // Пропускаем статику, auth routes, bot routes, health check и debug
   if (request.nextUrl.pathname.startsWith('/_next') ||
       request.nextUrl.pathname.startsWith('/api/auth') ||
       request.nextUrl.pathname.startsWith('/api/bot') ||
-      request.nextUrl.pathname.startsWith('/api/health')) {
+      request.nextUrl.pathname.startsWith('/api/health') ||
+      request.nextUrl.pathname.startsWith('/api/debug-env')) {
     return NextResponse.next()
   }
   

@@ -216,6 +216,9 @@ export default function DebugPage() {
               <Button size="sm" onClick={checkServerEnv} variant="destructive">
                 Check Server ENV
               </Button>
+              <Button size="sm" onClick={() => testAPI('/api/health')} variant="secondary">
+                Health Check
+              </Button>
               <Button size="sm" onClick={() => testAPI('/api/user/me')}>
                 Test User API
               </Button>
