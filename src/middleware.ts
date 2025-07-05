@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { parseInitData, validateInitDataFormat } from '@/lib/telegram/validation'
+import { validate, type InitData } from '@telegram-apps/init-data-node'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Пропускаем статику, auth routes, bot routes, health check и debug
   if (request.nextUrl.pathname.startsWith('/_next') ||
       request.nextUrl.pathname.startsWith('/api/auth') ||
@@ -15,11 +15,12 @@ export function middleware(request: NextRequest) {
   
   // Получаем initData из заголовка
   const initData = request.headers.get('X-Telegram-Init-Data')
+  const botToken = process.env.TELEGRAM_BOT_TOKEN
   
-  // Логирование убираем из middleware, так как он работает на сервере
-  // console.log('[Middleware] Path:', request.nextUrl.pathname)
-  // console.log('[Middleware] InitData present:', !!initData)
-  // console.log('[Middleware] NODE_ENV:', process.env.NODE_ENV)
+  // Логирование для отладки
+  console.log('[Middleware] Path:', request.nextUrl.pathname)
+  console.log('[Middleware] InitData present:', !!initData)
+  console.log('[Middleware] BOT_TOKEN present:', !!botToken)
   
   // В режиме разработки используем mock данные
   if (!initData && process.env.NODE_ENV === 'development') {
@@ -71,25 +72,47 @@ export function middleware(request: NextRequest) {
     )
   }
   
-  // Проверяем формат данных
-  if (!validateInitDataFormat(initData)) {
+  // Валидация с использованием официального пакета
+  let validatedData: any   = null;
+  
+  try {
+    if (botToken) {
+      // Используем официальную валидацию если есть токен бота
+      validatedData =  validate(initData, botToken);
+      console.log('[Middleware] Official validation passed');
+    } else {
+      // Fallback: парсим данные без валидации подписи
+      console.warn('[Middleware] BOT_TOKEN not set, parsing without signature validation');
+      const params = new URLSearchParams(initData);
+      const userStr = params.get('user');
+      
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        validatedData = {
+          user,
+          auth_date: parseInt(params.get('auth_date') || '0'),
+          hash: params.get('hash') || '',
+          signature: params.get('signature') || ''
+        } as unknown as InitData;
+      }
+    }
+  } catch (error) {
+    console.error('[Middleware] Validation error:', error);
     return NextResponse.json(
-      { error: 'Invalid init data format' },
+      { error: 'Invalid init data' },
       { status: 401 }
     )
   }
   
-  const user = parseInitData(initData)
-  
-  // console.log('[Middleware] Parsed user:', user)
-  
-  if (!user) {
-    console.error('[Middleware] Failed to parse user from initData:', initData)
+  if (!validatedData || !validatedData.user) {
+    console.error('[Middleware] No user data in validated init data');
     return NextResponse.json(
       { error: 'Invalid user data' },
       { status: 401 }
     )
   }
+  
+  const user = validatedData.user
   
   // Добавляем user в заголовки для использования в API
   const requestHeaders = new Headers(request.headers)
