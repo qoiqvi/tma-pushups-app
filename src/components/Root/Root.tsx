@@ -10,8 +10,21 @@ import { AppRoot } from '@telegram-apps/telegram-ui';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorPage } from '@/components/ErrorPage';
-import { TelegramInit } from '@/components/TelegramInit/TelegramInit';
+import { AuthProvider } from '@/components/AuthProvider/AuthProvider';
 import { ToastProvider } from '@/components/shared/ToastProvider';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 import { useDidMount } from '@/hooks/useDidMount';
 
 import './styles.css';
@@ -42,9 +55,11 @@ export function Root(props: PropsWithChildren) {
 
   return didMount ? (
     <ErrorBoundary fallback={ErrorPage}>
-      <TelegramInit>
-        <RootInner {...props} />
-      </TelegramInit>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <RootInner {...props} />
+        </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   ) : (
     <div className="root__loading">Loading</div>

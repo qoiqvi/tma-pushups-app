@@ -1,7 +1,6 @@
 import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import '@/types/telegram'
-import { getTelegramInitData } from '@/lib/telegram/mock'
-import { logger } from '@/lib/debug'
+import { getAuthHeaders } from '@/lib/auth/client'
 
 interface OverallStats {
   total_workouts: number
@@ -42,9 +41,7 @@ export function useStats(period: 'week' | 'month' | 'all' = 'week'): UseQueryRes
     queryKey: ['stats', period],
     queryFn: async () => {
       const response = await fetch(`/api/stats?period=${period}`, {
-        headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
-        },
+        headers: getAuthHeaders(),
       })
       
       if (!response.ok) {
@@ -63,26 +60,15 @@ export function useOverallStats() {
   return useQuery({
     queryKey: ['stats', 'overall'],
     queryFn: async () => {
-      logger.info('Fetching overall stats...')
-      const initData = getTelegramInitData()
-      logger.info('InitData for stats', { length: initData.length })
-      
       const response = await fetch('/api/stats?period=all', {
-        headers: {
-          'X-Telegram-Init-Data': initData,
-        },
+        headers: getAuthHeaders(),
       })
       
-      logger.info('Stats response', { status: response.status, ok: response.ok })
-      
       if (!response.ok) {
-        const error = await response.text()
-        logger.error('Failed to fetch overall stats', { status: response.status, error })
         throw new Error('Failed to fetch overall stats')
       }
       
       const result = await response.json()
-      logger.info('Stats loaded successfully', result.overall_stats)
       return result.overall_stats
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -96,9 +82,7 @@ export function useChartData(period: 'week' | 'month' | 'all' = 'week') {
     queryKey: ['chartData', period],
     queryFn: async () => {
       const response = await fetch(`/api/stats?period=${period}`, {
-        headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
-        },
+        headers: getAuthHeaders(),
       })
       
       if (!response.ok) {
@@ -119,9 +103,7 @@ export function usePeriodStats(period: 'week' | 'month' | 'all' = 'week') {
     queryKey: ['periodStats', period],
     queryFn: async () => {
       const response = await fetch(`/api/stats?period=${period}`, {
-        headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
-        },
+        headers: getAuthHeaders(),
       })
       
       if (!response.ok) {
@@ -142,9 +124,7 @@ export function useWorkoutHistory(period: 'week' | 'month' | 'all' = 'week') {
     queryKey: ['workoutHistory', period],
     queryFn: async () => {
       const response = await fetch(`/api/workouts?period=${period}&limit=50`, {
-        headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
-        },
+        headers: getAuthHeaders(),
       })
       
       if (!response.ok) {
@@ -164,9 +144,7 @@ export function usePersonalRecords() {
     queryKey: ['personalRecords'],
     queryFn: async () => {
       const response = await fetch('/api/stats?records=true', {
-        headers: {
-          'X-Telegram-Init-Data': getTelegramInitData(),
-        },
+        headers: getAuthHeaders(),
       })
       
       if (!response.ok) {
