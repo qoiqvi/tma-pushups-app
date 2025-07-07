@@ -4,6 +4,8 @@ import { getRawInitData } from '@/lib/telegram/init';
 export function getAuthHeaders(): HeadersInit {
   const initData = getRawInitData();
   
+  console.log('[Auth] getAuthHeaders called, initData:', initData ? `${initData.length} chars` : 'null');
+  
   if (!initData) {
     return {};
   }

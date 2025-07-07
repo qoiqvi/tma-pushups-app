@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 import { initTelegramSDK, mockTelegramEnvironment, isTelegramEnvironment } from '@/lib/telegram/init';
 
+// Mock environment immediately in development
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && !isTelegramEnvironment()) {
+  console.log('[TelegramInit] Mocking Telegram environment for development (immediate)');
+  mockTelegramEnvironment();
+}
+
 interface TelegramInitProps {
   children: React.ReactNode;
 }
@@ -14,12 +20,6 @@ export function TelegramInit({ children }: TelegramInitProps) {
   useEffect(() => {
     async function init() {
       try {
-        // In development, mock Telegram environment if not in Telegram
-        if (process.env.NODE_ENV === 'development' && !isTelegramEnvironment()) {
-          console.log('[TelegramInit] Mocking Telegram environment for development');
-          mockTelegramEnvironment();
-        }
-
         // Initialize Telegram SDK
         await initTelegramSDK();
         

@@ -77,8 +77,6 @@ export function isTelegramEnvironment(): boolean {
  * Gets the raw init data string for server validation
  */
 export function getRawInitData(): string | null {
-  if (!initData.state) return null;
-  
   // Try to get from URL hash first (most reliable)
   if (typeof window !== 'undefined') {
     const hash = window.location.hash.substring(1);
@@ -86,6 +84,11 @@ export function getRawInitData(): string | null {
     const tgWebAppData = params.get('tgWebAppData');
     if (tgWebAppData) {
       return tgWebAppData;
+    }
+    
+    // Try window.Telegram.WebApp.initData
+    if (window.Telegram?.WebApp?.initData) {
+      return window.Telegram.WebApp.initData;
     }
   }
 
@@ -97,8 +100,22 @@ export function getRawInitData(): string | null {
     }
   }
 
-  // If we have initData state but no raw string, return null
-  // We'll rely on the URL hash and sessionStorage for now
+  // In development mode with mock data, create init data from mock
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    const mockUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    if (mockUser) {
+      const params = new URLSearchParams();
+      params.append('user', JSON.stringify(mockUser));
+      params.append('auth_date', Math.floor(Date.now() / 1000).toString());
+      params.append('hash', 'mock-hash-development');
+      
+      const mockInitData = params.toString();
+      // Store it for future use
+      sessionStorage.setItem('__telegram__initData', mockInitData);
+      return mockInitData;
+    }
+  }
+
   return null;
 }
 
@@ -135,6 +152,14 @@ export function mockTelegramEnvironment() {
     query_id: 'mock-query-id',
   };
 
+  // Mock the init data in URL
+  const params = new URLSearchParams();
+  params.append('user', JSON.stringify(mockUser));
+  params.append('auth_date', Math.floor(Date.now() / 1000).toString());
+  params.append('hash', 'mock-hash-development');
+  
+  const mockInitDataString = params.toString();
+  
   // Create mock WebApp object
   if (!window.Telegram) {
     (window as any).Telegram = {};
@@ -142,7 +167,7 @@ export function mockTelegramEnvironment() {
   
   if (!window.Telegram?.WebApp) {
     (window as any).Telegram.WebApp = {
-      initData: '',
+      initData: mockInitDataString,
       initDataUnsafe: {
         user: mockUser,
         auth_date: Math.floor(Date.now() / 1000),
@@ -178,16 +203,11 @@ export function mockTelegramEnvironment() {
     };
   }
 
-  // Mock the init data in URL
-  const params = new URLSearchParams();
-  params.append('user', JSON.stringify(mockUser));
-  params.append('auth_date', Math.floor(Date.now() / 1000).toString());
-  params.append('hash', 'mock-hash-development');
-  
-  window.location.hash = `tgWebAppData=${encodeURIComponent(params.toString())}`;
+  // Set the hash in URL
+  window.location.hash = `tgWebAppData=${encodeURIComponent(mockInitDataString)}`;
   
   // Store in sessionStorage as well
-  sessionStorage.setItem('__telegram__initData', params.toString());
+  sessionStorage.setItem('__telegram__initData', mockInitDataString);
   
   console.log('[TMA] Mock Telegram environment created');
 }

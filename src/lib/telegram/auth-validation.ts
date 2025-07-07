@@ -13,6 +13,12 @@ export function validateTelegramInitData(initData: string, botToken: string): bo
     return false;
   }
 
+  // In development mode, accept mock hash
+  if (process.env.NODE_ENV === 'development' && hash === 'mock-hash-development') {
+    console.log('[Auth] Accepting mock hash in development mode');
+    return true;
+  }
+
   // Remove hash from params for validation
   params.delete('hash');
 
