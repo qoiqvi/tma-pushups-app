@@ -2,26 +2,27 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Пропускаем статику и публичные endpoints
+  // Skip static files and public endpoints
   if (request.nextUrl.pathname.startsWith('/_next') ||
       request.nextUrl.pathname.startsWith('/api/telegram') ||
       request.nextUrl.pathname.startsWith('/api/health')) {
     return NextResponse.next()
   }
   
-  // Для API endpoints проверяем user ID
+  // For API endpoints, check Telegram init data
   if (request.nextUrl.pathname.startsWith('/api')) {
-    // Получаем user ID из заголовка
-    const userId = request.headers.get('X-User-Id')
+    // Get init data from header
+    const initData = request.headers.get('X-Telegram-Init-Data')
     
-    if (!userId) {
+    if (!initData) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized: Missing Telegram init data' },
         { status: 401 }
       )
     }
     
-    // Передаем user ID дальше
+    // Note: We can't do full validation in middleware due to Edge Runtime limitations
+    // Full validation will happen in the API routes
     return NextResponse.next()
   }
   

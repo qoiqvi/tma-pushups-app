@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/telegram'
+import { authenticateRequest, isAuthError } from '@/lib/api/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { startOfWeek, endOfWeek, subDays, format, parseISO, differenceInDays } from 'date-fns'
 
 // GET /api/stats - Получить статистику пользователя
 export async function GET(request: NextRequest) {
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
+  
+  if (isAuthError(authResult)) {
+    return authResult.error
+  }
+  
+  const userId = authResult.user.id
   
   console.log('[Stats API] User ID:', userId)
-  
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
-  }
 
   const { searchParams } = new URL(request.url)
   const period = searchParams.get('period') || 'week' // week, month, all

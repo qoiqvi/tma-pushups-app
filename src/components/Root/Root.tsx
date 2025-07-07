@@ -10,7 +10,8 @@ import { AppRoot } from '@telegram-apps/telegram-ui';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorPage } from '@/components/ErrorPage';
-import { AuthProvider } from '@/components/AuthProvider/AuthProvider';
+import { TelegramInit } from '@/components/TelegramInit';
+import { TelegramAuthProvider } from '@/components/TelegramAuthProvider';
 import { ToastProvider } from '@/components/shared/ToastProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -55,11 +56,13 @@ export function Root(props: PropsWithChildren) {
 
   return didMount ? (
     <ErrorBoundary fallback={ErrorPage}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <RootInner {...props} />
-        </AuthProvider>
-      </QueryClientProvider>
+      <TelegramInit>
+        <QueryClientProvider client={queryClient}>
+          <TelegramAuthProvider>
+            <RootInner {...props} />
+          </TelegramAuthProvider>
+        </QueryClientProvider>
+      </TelegramInit>
     </ErrorBoundary>
   ) : (
     <div className="root__loading">Loading</div>

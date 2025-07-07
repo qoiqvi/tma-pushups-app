@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/telegram'
+import { authenticateRequest, isAuthError } from '@/lib/api/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
-// GET /api/workouts - Получить список тренировок
+// GET /api/workouts - Get workouts list
 export async function GET(request: NextRequest) {
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   const { searchParams } = new URL(request.url)
   const limit = parseInt(searchParams.get('limit') || '10')
@@ -39,16 +38,15 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST /api/workouts - Создать новую тренировку
+// POST /api/workouts - Create new workout
 export async function POST(request: NextRequest) {
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   try {
     const body = await request.json()

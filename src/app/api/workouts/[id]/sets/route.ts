@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/telegram'
+import { authenticateRequest, isAuthError } from '@/lib/api/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // GET /api/workouts/[id]/sets - Получить подходы тренировки
@@ -8,14 +8,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const params = await context.params
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   // Проверяем, что тренировка принадлежит пользователю
   const { data: workout, error: workoutError } = await supabaseAdmin
@@ -54,14 +53,13 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   const params = await context.params
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   try {
     const body = await request.json()

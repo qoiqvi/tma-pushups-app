@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/telegram'
+import { authenticateRequest, isAuthError } from '@/lib/api/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { updateUserStats } from '@/lib/stats'
 
@@ -9,14 +9,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const params = await context.params
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   const { data, error } = await supabaseAdmin
     .from('workouts')
@@ -47,14 +46,13 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   const params = await context.params
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   try {
     const body = await request.json()
@@ -122,14 +120,13 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   const params = await context.params
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   const { error } = await supabaseAdmin
     .from('workouts')

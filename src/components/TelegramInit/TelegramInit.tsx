@@ -1,137 +1,65 @@
 'use client';
 
-import { type PropsWithChildren, useEffect, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  retrieveLaunchParams,
-  miniApp,
-  themeParams,
-  viewport,
-  backButton,
-  mainButton,
-  init,
-} from '@telegram-apps/sdk-react';
-import { UserInit } from '@/components/UserInit/UserInit';
+import { useEffect, useState } from 'react';
+import { initTelegramSDK, mockTelegramEnvironment, isTelegramEnvironment } from '@/lib/telegram/init';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+interface TelegramInitProps {
+  children: React.ReactNode;
+}
 
-export function TelegramInit({ children }: PropsWithChildren) {
+export function TelegramInit({ children }: TelegramInitProps) {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    const initTelegram = async () => {
+    async function init() {
       try {
-        // Проверяем, что мы в браузере
-        if (typeof window === 'undefined') return;
-        
-        // Получаем параметры запуска
-        const lp = retrieveLaunchParams();
-        console.log('Launch params:', lp);
-        
-        // Сохраняем данные Telegram в sessionStorage если они есть в URL
-        const hash = window.location.hash;
-        if (hash && hash.includes('tgWebAppData=')) {
-          const match = hash.match(/tgWebAppData=([^&]+)/);
-          if (match && match[1]) {
-            const decodedData = decodeURIComponent(match[1]);
-            sessionStorage.setItem('telegram_init_data', decodedData);
-            console.log('Saved Telegram data to sessionStorage');
-          }
+        // In development, mock Telegram environment if not in Telegram
+        if (process.env.NODE_ENV === 'development' && !isTelegramEnvironment()) {
+          console.log('[TelegramInit] Mocking Telegram environment for development');
+          mockTelegramEnvironment();
         }
-        
-        // Инициализируем SDK только если мы внутри Telegram
-        if (lp && lp.tgWebAppVersion) {
-          console.log('Initializing Telegram SDK...');
-          
-          // Сначала инициализируем SDK
-          init();
-          
-          // Монтируем компоненты с проверками доступности
-          if (miniApp.mountSync.isAvailable()) {
-            miniApp.mountSync();
-            console.log('MiniApp mounted');
-          }
-          
-          if (themeParams.mountSync.isAvailable()) {
-            themeParams.mountSync();
-            console.log('ThemeParams mounted');
-          }
-          
-          if (viewport.mount.isAvailable()) {
-            viewport.mount();
-            console.log('Viewport mounted');
-          }
-          
-          if (backButton.mount.isAvailable()) {
-            backButton.mount();
-            console.log('BackButton mounted');
-          }
-          
-          if (mainButton.mount.isAvailable()) {
-            mainButton.mount();
-            console.log('MainButton mounted');
-          }
 
-          // Настройка базовых параметров с проверками доступности
-          if (miniApp.ready.isAvailable()) {
-            miniApp.ready();
-            console.log('MiniApp ready');
-          }
-          
-          if (viewport.expand.isAvailable()) {
-            viewport.expand();
-            console.log('Viewport expanded');
-          }
-          
-          // Скрываем back button по умолчанию
-          if (backButton.hide.isAvailable()) {
-            backButton.hide();
-            console.log('BackButton hidden');
-          }
-        } else {
-          console.log('Not in Telegram environment, skipping SDK initialization');
-        }
+        // Initialize Telegram SDK
+        await initTelegramSDK();
         
-        if (mounted) {
-          setIsInitialized(true);
-        }
-      } catch (error) {
-        console.error('Telegram SDK initialization error:', error);
-        if (mounted) {
-          setIsInitialized(true); // Все равно показываем приложение
-        }
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('[TelegramInit] Failed to initialize:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize Telegram SDK');
       }
-    };
+    }
 
-    initTelegram();
-
-    return () => {
-      mounted = false;
-    };
+    init();
   }, []);
 
-  // Показываем детей только после инициализации
-  if (!isInitialized) {
-    return <div className="telegram-init-loading">Initializing...</div>;
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Initialization Error</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <UserInit>
-        {children}
-      </UserInit>
-    </QueryClientProvider>
-  );
+  if (!isInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }

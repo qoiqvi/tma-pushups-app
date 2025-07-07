@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/telegram'
+import { authenticateRequest, isAuthError } from '@/lib/api/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 
 // POST /api/photos/upload - Загрузить фото тренировки
 export async function POST(request: NextRequest) {
-  const userId = getUserIdFromRequest(request)
+  const authResult = await authenticateRequest(request)
   
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    )
+  if (isAuthError(authResult)) {
+    return authResult.error
   }
+  
+  const userId = authResult.user.id
 
   try {
     const formData = await request.formData()
