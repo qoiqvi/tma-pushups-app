@@ -4,7 +4,16 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useRouter } from 'next/navigation';
 import { initData } from '@telegram-apps/sdk-react';
 import { getRawInitData, getTelegramUser } from '@/lib/telegram/init';
-import { User } from '@/lib/types';
+
+interface User {
+  id: number;
+  telegramId: number;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  languageCode: string;
+  isPremium: boolean;
+}
 
 interface TelegramAuthContextType {
   user: User | null;
@@ -85,18 +94,7 @@ export function TelegramAuthProvider({ children }: TelegramAuthProviderProps) {
 
   // Initialize authentication on mount
   useEffect(() => {
-    // Subscribe to init data changes
-    const unsubscribe = initData.subscribe(() => {
-      console.log('[TelegramAuth] Init data changed, refetching user');
-      fetchUser();
-    });
-
-    // Initial fetch
     fetchUser();
-
-    return () => {
-      unsubscribe();
-    };
   }, [fetchUser]);
 
   // Redirect to auth page if not authenticated

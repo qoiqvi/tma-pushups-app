@@ -120,13 +120,13 @@ export async function authenticateRequest(
 
   return {
     user: {
-      id: dbUser.data.id,
+      id: dbUser.data.telegram_id,
       telegramId: dbUser.data.telegram_id,
-      username: dbUser.data.username,
-      firstName: dbUser.data.first_name,
-      lastName: dbUser.data.last_name,
-      languageCode: dbUser.data.language_code,
-      isPremium: dbUser.data.is_premium
+      username: dbUser.data.username || undefined,
+      firstName: dbUser.data.first_name || undefined,
+      lastName: dbUser.data.last_name || undefined,
+      languageCode: dbUser.data.language_code || 'en',
+      isPremium: dbUser.data.is_premium || false
     }
   };
 }

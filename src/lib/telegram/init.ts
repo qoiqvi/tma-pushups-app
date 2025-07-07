@@ -8,18 +8,7 @@ import {
   mainButton,
   secondaryButton,
   settingsButton,
-  invoiceClosed,
-  popupClosed,
-  qrTextReceived,
-  clipboardTextReceived,
-  writeAccessRequested,
-  contactRequested,
-  closingBehavior,
-  openLink,
-  openTelegramLink,
-  shareURL,
-  readTextFromClipboard,
-  shareStory
+  closingBehavior
 } from '@telegram-apps/sdk-react';
 
 /**
@@ -48,14 +37,6 @@ export async function initTelegramSDK(): Promise<void> {
 
     // Initialize other features
     void closingBehavior.mount();
-
-    // Initialize event handlers
-    void invoiceClosed.mount();
-    void popupClosed.mount();
-    void qrTextReceived.mount();
-    void clipboardTextReceived.mount();
-    void writeAccessRequested.mount();
-    void contactRequested.mount();
 
     // Apply theme CSS variables
     if (themeParams.isMounted()) {
@@ -116,41 +97,19 @@ export function getRawInitData(): string | null {
     }
   }
 
-  // If we have initData state but no raw string, we need to reconstruct it
-  // This is less reliable but better than nothing
-  const data = initData.state;
-  const params = new URLSearchParams();
-  
-  if (data.user) {
-    params.append('user', JSON.stringify(data.user));
-  }
-  if (data.authDate) {
-    params.append('auth_date', data.authDate.getTime().toString());
-  }
-  if (data.hash) {
-    params.append('hash', data.hash);
-  }
-  if (data.queryId) {
-    params.append('query_id', data.queryId);
-  }
-  if (data.chatType) {
-    params.append('chat_type', data.chatType);
-  }
-  if (data.chatInstance) {
-    params.append('chat_instance', data.chatInstance);
-  }
-  if (data.startParam) {
-    params.append('start_param', data.startParam);
-  }
-
-  return params.toString();
+  // If we have initData state but no raw string, return null
+  // We'll rely on the URL hash and sessionStorage for now
+  return null;
 }
 
 /**
  * Gets the current user from init data
  */
 export function getTelegramUser() {
-  return initData.user();
+  if (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+    return window.Telegram.WebApp.initDataUnsafe.user;
+  }
+  return null;
 }
 
 /**
@@ -181,7 +140,7 @@ export function mockTelegramEnvironment() {
     (window as any).Telegram = {};
   }
   
-  if (!window.Telegram.WebApp) {
+  if (!window.Telegram?.WebApp) {
     (window as any).Telegram.WebApp = {
       initData: '',
       initDataUnsafe: {

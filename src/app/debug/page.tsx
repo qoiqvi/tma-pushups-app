@@ -60,18 +60,18 @@ export default function DebugPage() {
 
   // Логирование состояний хуков
   useEffect(() => {
-    if (user) logger.info(`User loaded: ID=${user.telegram_id}`);
-    if (userError) logger.error(`User error: ${userError.message}`);
+    if (user) logger.info(`User loaded: ID=${user.telegramId}`);
+    if (userError) logger.error(`User error: ${String(userError)}`);
   }, [user, userError]);
 
   useEffect(() => {
     if (stats) logger.info(`Stats loaded: workouts=${stats.total_workouts}, reps=${stats.total_reps}`);
-    if (statsError) logger.error(`Stats error: ${statsError.message}`);
+    if (statsError) logger.error(`Stats error: ${String(statsError)}`);
   }, [stats, statsError]);
 
   useEffect(() => {
     if (workouts) logger.info(`Workouts loaded: count=${workouts.total}`);
-    if (workoutsError) logger.error(`Workouts error: ${workoutsError.message}`);
+    if (workoutsError) logger.error(`Workouts error: ${String(workoutsError)}`);
   }, [workouts, workoutsError]);
 
   const testAPI = async (endpoint: string) => {
@@ -183,9 +183,9 @@ export default function DebugPage() {
           <div className="space-y-2">
             <h3 className="font-semibold">Connection Status</h3>
             <div className="text-sm space-y-1">
-              <div>User: {userLoading ? '⏳' : user ? '✅' : '❌'} {userError?.message}</div>
-              <div>Stats: {statsLoading ? '⏳' : stats ? '✅' : '❌'} {statsError?.message}</div>
-              <div>Workouts: {workoutsLoading ? '⏳' : workouts ? '✅' : '❌'} {workoutsError?.message}</div>
+              <div>User: {userLoading ? '⏳' : user ? '✅' : '❌'} {userError ? String(userError) : ''}</div>
+              <div>Stats: {statsLoading ? '⏳' : stats ? '✅' : '❌'} {statsError ? String(statsError) : ''}</div>
+              <div>Workouts: {workoutsLoading ? '⏳' : workouts ? '✅' : '❌'} {workoutsError ? String(workoutsError) : ''}</div>
             </div>
           </div>
 
