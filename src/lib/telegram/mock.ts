@@ -32,11 +32,61 @@ export const mockInitData = () => {
 export const getTelegramInitData = () => {
   if (typeof window === 'undefined') return ''
   
-  // Метод 1: Telegram SDK
-  const telegramData = window.Telegram?.WebApp?.initData
-  if (telegramData) {
-    logger.info('[getTelegramInitData] Found data in Telegram SDK')
-    return telegramData
+  // Метод 1: Telegram SDK - проверяем разные варианты
+  if (window.Telegram?.WebApp) {
+    // Вариант 1: initData как строка
+    if (window.Telegram.WebApp.initData) {
+      logger.info('[getTelegramInitData] Found data in Telegram SDK (initData)')
+      return window.Telegram.WebApp.initData
+    }
+    
+    // Вариант 2: Собираем из initDataUnsafe
+    if (window.Telegram.WebApp.initDataUnsafe) {
+      const unsafe = window.Telegram.WebApp.initDataUnsafe
+      logger.info('[getTelegramInitData] Found initDataUnsafe, constructing initData', unsafe)
+      
+      // Собираем параметры
+      const params = new URLSearchParams()
+      
+      if (unsafe.user) {
+        params.append('user', JSON.stringify(unsafe.user))
+      }
+      if (unsafe.auth_date) {
+        params.append('auth_date', unsafe.auth_date.toString())
+      }
+      if (unsafe.hash) {
+        params.append('hash', unsafe.hash)
+      }
+      if (unsafe.query_id) {
+        params.append('query_id', unsafe.query_id)
+      }
+      if ((unsafe as any).chat_type) {
+        params.append('chat_type', (unsafe as any).chat_type)
+      }
+      if ((unsafe as any).chat_instance) {
+        params.append('chat_instance', (unsafe as any).chat_instance)
+      }
+      if (unsafe.start_param) {
+        params.append('start_param', unsafe.start_param)
+      }
+      
+      const initDataString = params.toString()
+      if (initDataString) {
+        logger.info('[getTelegramInitData] Constructed initData from initDataUnsafe', {
+          length: initDataString.length,
+          preview: initDataString.substring(0, 50) + '...'
+        })
+        
+        // Сохраняем для будущего использования
+        try {
+          sessionStorage.setItem('telegram_init_data', initDataString)
+        } catch (e) {
+          logger.error('[getTelegramInitData] Failed to save to sessionStorage', e)
+        }
+        
+        return initDataString
+      }
+    }
   }
   
   // Метод 2: URL hash параметры (Telegram Desktop и Web)
