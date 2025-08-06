@@ -9,17 +9,25 @@ export const mockInitData = () => {
       first_name: 'Test',
       last_name: 'User',
       username: 'testuser',
-      language_code: 'ru'
+      language_code: 'ru',
+      is_premium: false
     }
     
     const authDate = Math.floor(Date.now() / 1000)
-    const hash = 'mock_hash_for_development'
+    // Use the hash that validation accepts in development mode
+    const hash = 'mock-hash-development'
     
     // Формируем initData в правильном формате
     const params = new URLSearchParams({
       user: JSON.stringify(mockUser),
       auth_date: authDate.toString(),
       hash: hash
+    })
+    
+    logger.info('[Mock] Generated mock init data', {
+      userId: mockUser.id,
+      hash: hash,
+      authDate: authDate
     })
     
     return params.toString()

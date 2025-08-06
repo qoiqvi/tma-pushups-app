@@ -50,6 +50,13 @@ class DebugLogger {
     this.addLog('error', message, data);
   }
 
+  debug(message: string, data?: any) {
+    // Debug level - only log in development
+    if (process.env.NODE_ENV === 'development') {
+      this.addLog('info', `[DEBUG] ${message}`, data);
+    }
+  }
+
   getLogs(): LogEntry[] {
     return this.logs;
   }
