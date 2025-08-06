@@ -249,7 +249,7 @@ export async function validateInitData(
     let isValid = false;
     
     // Check if we're in Node.js environment (has crypto module)
-    if (typeof crypto !== 'undefined' && crypto.createHmac) {
+    if (typeof crypto !== 'undefined' && typeof crypto.createHmac === 'function') {
       isValid = validateInitDataNode(initData, botToken);
     } else {
       // Use Web Crypto API for Edge runtime

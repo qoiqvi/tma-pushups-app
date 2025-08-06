@@ -3,6 +3,9 @@ import { validateInitData } from '@/lib/telegram/validation';
 import { supabaseAdmin } from '@/lib/supabase';
 import { cache, cacheKeys } from '@/lib/telegram/cache';
 import { logger } from '@/lib/debug';
+import { Database } from '@/lib/database.types';
+
+type DatabaseUser = Database['public']['Tables']['users']['Row'];
 
 export interface AuthenticatedUser {
   id: number;
@@ -69,7 +72,7 @@ export async function authenticateRequest(
 
   // Check cache first
   const cacheKey = cacheKeys.user(telegramUser.id);
-  let dbUserData = cache.get(cacheKey);
+  let dbUserData: DatabaseUser | null = cache.get(cacheKey);
   
   if (!dbUserData) {
     // Get or create user in database
@@ -130,11 +133,11 @@ export async function authenticateRequest(
 
   // Transform to authenticated user
   const user: AuthenticatedUser = {
-    id: dbUserData.id,
+    id: dbUserData.telegram_id,
     telegramId: dbUserData.telegram_id,
-    username: dbUserData.username,
-    firstName: dbUserData.first_name,
-    lastName: dbUserData.last_name,
+    username: dbUserData.username || undefined,
+    firstName: dbUserData.first_name || undefined,
+    lastName: dbUserData.last_name || undefined,
     languageCode: dbUserData.language_code || 'ru',
     isPremium: dbUserData.is_premium || false
   };
@@ -157,4 +160,11 @@ export async function getUserFromRequest(request: NextRequest): Promise<Authenti
   }
   
   return result.user;
+}
+
+/**
+ * Type guard to check if authentication result contains an error
+ */
+export function isAuthError(result: { user: AuthenticatedUser } | { error: NextResponse }): result is { error: NextResponse } {
+  return 'error' in result;
 }
